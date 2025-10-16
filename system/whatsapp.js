@@ -273,7 +273,9 @@ m.reply(`*[!] bug successfully sent to target*`);
   
 break;
 
-    case '.price': {
+    case 'price': {
+      const userRole = m.isOwner ? "Owner" : "User";
+      const pushname = m.pushName || "User";
   const buttons = [
     { buttonId: '.price mlbb-global', buttonText: { displayText: 'MLBB Global' }, type: 1 },
     { buttonId: '.price mlbb-brazil', buttonText: { displayText: 'MLBB Brazil' }, type: 1 },
