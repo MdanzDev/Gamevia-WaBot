@@ -273,68 +273,65 @@ m.reply(`*[!] bug successfully sent to target*`);
   
 break;
 
-    case 'price': {
-      const userRole = m.isOwner ? "Owner" : "User";
-      const pushname = m.pushName || "User";
-  const buttons = [
-    { buttonId: '.price mlbb-global', buttonText: { displayText: 'MLBB Global' }, type: 1 },
-    { buttonId: '.price mlbb-brazil', buttonText: { displayText: 'MLBB Brazil' }, type: 1 },
-    { buttonId: '.price mlbb-my', buttonText: { displayText: 'MLBB Malaysia' }, type: 1 },
-    { buttonId: '.price codm', buttonText: { displayText: 'Call of Duty Mobile' }, type: 1 },
-  ];
+    
+    case '.price': {
+  try {
+    const pushname = m.pushName || "User";
+    const userRole = m.isOwner ? "Owner" : "User";
+    const argsText = args[0] ? args[0].toLowerCase() : null;
+    const apiKey = "YOUR_API_KEY"; // Replace with your Gamevia API key
 
-  const buttonMessage = {
-    text: `Hello ${pushname}\nRole: ${userRole}\n\nSelect the game region to view available top-up prices.`,
-    footer: 'Powered by GameVia',
-    buttons,
-    headerType: 2
-  };
+    // If user didn’t choose any game yet, show the selection menu
+    if (!argsText) {
+      const buttons = [
+        { buttonId: '.price mlbb-global', buttonText: { displayText: 'MLBB Global' }, type: 1 },
+        { buttonId: '.price mlbb-brazil', buttonText: { displayText: 'MLBB Brazil' }, type: 1 },
+        { buttonId: '.price mlbb-my', buttonText: { displayText: 'MLBB Malaysia' }, type: 1 },
+        { buttonId: '.price codm', buttonText: { displayText: 'Call of Duty Mobile' }, type: 1 },
+      ];
 
-  await rikz.sendMessage(m.chat, buttonMessage, { quoted: msg });
-  break;
+      const buttonMessage = {
+        text: `Hello ${pushname}\nRole: ${userRole}\n\nSelect the game to view available top-up prices.`,
+        footer: 'Powered by GameVia',
+        buttons,
+        headerType: 4
+      };
+
+      await rikz.sendMessage(m.chat, buttonMessage, { quoted: m });
+      return;
+    }
+
+    // Fetch product list from GameVia API
+    const response = await fetch("https://api.gamevia.shop/v1/get_products.php", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey
+      },
+      body: JSON.stringify({ slug: argsText })
+    });
+
+    const data = await response.json();
+
+    if (!data.success) {
+      await rikz.sendMessage(m.chat, { text: `Failed to get products for ${argsText}.` }, { quoted: m });
+      return;
+    }
+
+    // Format product list
+    let list = `📦 Product List for ${data.game_name}\n\n`;
+    data.products.forEach((p, i) => {
+      list += `${i + 1}. ${p.name}\n   Code: ${p.srv_code}\n   Price: RM${p.price}\n   Stock: ${p.stock}\n\n`;
+    });
+    list += "Reply with the product code to continue ordering.";
+
+    await rikz.sendMessage(m.chat, { text: list }, { quoted: m });
+  } catch (err) {
+    console.error(err);
+    await rikz.sendMessage(m.chat, { text: "Error fetching product data." }, { quoted: m });
+  }
 }
-
-case '.price mlbb-global':
-case '.price mlbb-brazil':
-case '.price mlbb-my':
-case '.price codm': {
-  const slug = command.split(' ')[1] || text.trim().toLowerCase();
-  const apiKey = 'API-GVCDEAD0E38EA13632';
-
-  const response = await fetch('https://api.gamevia.shop/v1/get_products.php', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': apiKey
-    },
-    body: JSON.stringify({ slug })
-  });
-
-  const data = await response.json();
-  if (!data.success) return reply('Failed to fetch product list.');
-
-  const sections = [
-    {
-      title: `${data.game_name} (${slug.toUpperCase()})`,
-      rows: data.products.map(p => ({
-        title: p.name,
-        description: `RM${p.price.toFixed(2)} | Stock: ${p.stock}`,
-        rowId: `.order ${p.srv_code}`
-      }))
-    }
-  ];
-
-  const listMessage = {
-    text: `Game: ${data.game_name}\nSelect a product to order.`,
-    footer: 'Powered by GameVia',
-    title: 'Product Price List',
-    buttonText: 'View Products',
-    sections
-  };
-
-  await rikz.sendMessage(m.chat, { listMessage }, { quoted: msg });
-  break;
-    }
+break;
 //======================
 case 'public': {
 if (!isCreator) return m.reply(mess.owner) 
