@@ -332,7 +332,7 @@ case '.price codm': {
     sections
   };
 
-  await rikz.sendMessage(from, { listMessage }, { quoted: msg });
+  await rikz.sendMessage(m.chat, { listMessage }, { quoted: msg });
   break;
     }
 //======================
