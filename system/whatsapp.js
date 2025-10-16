@@ -290,7 +290,7 @@ break;
     headerType: 2
   };
 
-  await rikz.sendMessage(from, buttonMessage, { quoted: msg });
+  await rikz.sendMessage(m.chat, buttonMessage, { quoted: msg });
   break;
 }
 
