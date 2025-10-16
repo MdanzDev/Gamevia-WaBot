@@ -1,7 +1,7 @@
 //========HELO FRIEND========//
 global.prefix = [".", "!", ".", ",", "🐤", "🗿"]; 
 global.publik = true
-global.owner = ["62895339919004"] 
+global.owner = ["60137345871"] 
 global.namabot = 'TRAXC V4 VIP'
 //======================
 global.mess = { 
