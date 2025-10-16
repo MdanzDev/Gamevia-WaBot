@@ -284,10 +284,10 @@ break;
     // If user didn’t choose any game yet, show the selection menu
     if (!argsText) {
       const buttons = [
-        { buttonId: 'price mlbb-global', buttonText: { displayText: 'MLBB Global' }, type: 1 },
-        { buttonId: 'price mlbb-brazil', buttonText: { displayText: 'MLBB Brazil' }, type: 1 },
-        { buttonId: 'price mlbb-my', buttonText: { displayText: 'MLBB Malaysia' }, type: 1 },
-        { buttonId: 'price codm', buttonText: { displayText: 'Call of Duty Mobile' }, type: 1 },
+        { buttonId: '.price mlbb-global', buttonText: { displayText: 'MLBB Global' }, type: 1 },
+        { buttonId: '.price mlbb-brazil', buttonText: { displayText: 'MLBB Brazil' }, type: 1 },
+        { buttonId: '.price mlbb-my', buttonText: { displayText: 'MLBB Malaysia' }, type: 1 },
+        { buttonId: '.priceodm', buttonText: { displayText: 'Call of Duty Mobile' }, type: 1 },
       ];
 
       const buttonMessage = {
