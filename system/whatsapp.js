@@ -279,7 +279,7 @@ break;
     const pushname = m.pushName || "User";
     const userRole = m.isOwner ? "Owner" : "User";
     const argsText = args[0] ? args[0].toLowerCase() : null;
-    const apiKey = "YOUR_API_KEY"; // Replace with your Gamevia API key
+    const apiKey = "API-GVCDEAD0E38EA13632"; // Replace with your Gamevia API key
 
     // If user didn’t choose any game yet, show the selection menu
     if (!argsText) {
