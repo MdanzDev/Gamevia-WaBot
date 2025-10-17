@@ -274,64 +274,7 @@ m.reply(`*[!] bug successfully sent to target*`);
 break;
 
     
-    case 'price': {
-  try {
-    const pushname = m.pushName || "User";
-    const userRole = m.isOwner ? "Owner" : "User";
-    const argsText = args[0] ? args[0].toLowerCase() : null;
-    const apiKey = "API-GVCDEAD0E38EA13632"; // Replace with your Gamevia API key
-
-    // If user didn’t choose any game yet, show the selection menu
-    if (!argsText) {
-      const buttons = [
-        { buttonId: '.price mlbb-global', buttonText: { displayText: 'MLBB Global' }, type: 1 },
-        { buttonId: '.price mlbb-brazil', buttonText: { displayText: 'MLBB Brazil' }, type: 1 },
-        { buttonId: '.price mlbb-my', buttonText: { displayText: 'MLBB Malaysia' }, type: 1 },
-        { buttonId: '.priceodm', buttonText: { displayText: 'Call of Duty Mobile' }, type: 1 },
-      ];
-
-      const buttonMessage = {
-        text: `Hello ${pushname}\nRole: ${userRole}\n\nSelect the game to view available top-up prices.`,
-        footer: 'Powered by GameVia',
-        buttons,
-        headerType: 4
-      };
-
-      await rikz.sendMessage(m.chat, buttonMessage, { quoted: m });
-      return;
-    }
-
-    // Fetch product list from GameVia API
-    const response = await fetch("https://api.gamevia.shop/v1/get_products.php", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey
-      },
-      body: JSON.stringify({ slug: argsText })
-    });
-
-    const data = await response.json();
-
-    if (!data.success) {
-      await rikz.sendMessage(m.chat, { text: `Failed to get products for ${argsText}.` }, { quoted: m });
-      return;
-    }
-
-    // Format product list
-    let list = `📦 Product List for ${data.game_name}\n\n`;
-    data.products.forEach((p, i) => {
-      list += `${i + 1}. ${p.name}\n   Code: ${p.srv_code}\n   Price: RM${p.price}\n   Stock: ${p.stock}\n\n`;
-    });
-    list += "Reply with the product code to continue ordering.";
-
-    await rikz.sendMessage(m.chat, { text: list }, { quoted: m });
-  } catch (err) {
-    console.error(err);
-    await rikz.sendMessage(m.chat, { text: "Error fetching product data." }, { quoted: m });
-  }
-}
-break;
+    
 //======================
 case 'public': {
 if (!isCreator) return m.reply(mess.owner) 
@@ -350,32 +293,133 @@ m.reply(mess.succes)
 break
 //======================
 
-case "menu": {
-let itsmenu = 
-`
+//================ MENU =================//
+case 'menu': {
+  try {
+    const pushname = m.pushName || "User";
+    const role = m.isOwner ? "Owner" : "User";
 
-> 口 𝙏𝙍𝘼𝙓𝘾 _𝗩𝗘𝗥𝗦𝗜𝗢𝗡 𝟰_ !!
-Hello! Have A Nice Day!🤍
+    const buttons = [
+      { buttonId: '.help', buttonText: { displayText: 'Help' }, type: 1 },
+      { buttonId: '.price', buttonText: { displayText: 'Top-Up Prices' }, type: 1 }
+    ];
 
-_"jangan berpikir tidak mungkin, tapi berpikirlah bagaimana caranya"_
+    const msg = {
+      text: `Hello ${pushname}\nRole: ${role}\n\nWelcome to Traxc Bot v4!\nSelect an option below to get started.`,
+      footer: 'Powered by GameVia',
+      buttons,
+      headerType: 4
+    };
 
-– 𝗜𝗡𝗙𝗢𝗥𝗠𝗔𝗧𝗜𝗢𝗡 𝗕𝗢𝗧
-❒ Botname : Traxc
-❒ Creator : VallxDev 
-❒ Version : 4.0.0  
-❒ Status : *Free*
-
-*Script Information :*
-https://whatsapp.com/channel/0029Vb3LbOyDZ4LVYsjO0Z0T
-> © VallxDev (DEV NGUAWUR CIKK)
-
-`;
-await rikz.sendMessage(m.chat, {
-image: { url: "https://files.catbox.moe/k1vd3r.jpg" },
-caption: itsmenu
-}, { quoted: m });
+    await rikz.sendMessage(m.chat, msg, { quoted: m });
+  } catch (err) {
+    console.log(err);
+    await rikz.sendMessage(m.chat, { text: 'Error showing main menu.' }, { quoted: m });
+  }
 }
-break; 
+break;
+
+//================ HELP =================//
+case 'help': {
+  try {
+    const pushname = m.pushName || "User";
+    const role = m.isOwner ? "Owner" : "User";
+
+    const buttons = [
+      { buttonId: '.menu', buttonText: { displayText: 'Main Menu' }, type: 1 },
+      { buttonId: '.price', buttonText: { displayText: 'Top-Up Prices' }, type: 1 }
+    ];
+
+    const msg = {
+      text: `Hello ${pushname}\nRole: ${role}\n\nCommands available:\n\n- .menu : Show main menu\n- .help : Show this help message\n- .price : Show top-up price menu`,
+      footer: 'Powered by GameVia',
+      buttons,
+      headerType: 4
+    };
+
+    await rikz.sendMessage(m.chat, msg, { quoted: m });
+  } catch (err) {
+    console.log(err);
+    await rikz.sendMessage(m.chat, { text: 'Error showing help menu.' }, { quoted: m });
+  }
+}
+break;
+
+//================ PRICE MENU =================//
+case 'price': {
+  try {
+    const pushname = m.pushName || "User";
+    const role = m.isOwner ? "Owner" : "User";
+
+    const buttons = [
+      { buttonId: '.price-mlbb-global', buttonText: { displayText: 'MLBB Global' }, type: 1 },
+      { buttonId: '.price-mlbb-brazil', buttonText: { displayText: 'MLBB Brazil' }, type: 1 },
+      { buttonId: '.price-mlbb-my', buttonText: { displayText: 'MLBB Malaysia' }, type: 1 },
+      { buttonId: '.price-codm', buttonText: { displayText: 'Call of Duty Mobile' }, type: 1 },
+      { buttonId: '.price-genshin', buttonText: { displayText: 'Genshin Impact' }, type: 1 }
+    ];
+
+    const msg = {
+      text: `Hello ${pushname}\nRole: ${role}\n\nSelect a game below to check top-up prices.`,
+      footer: 'Powered by GameVia',
+      buttons,
+      headerType: 4
+    };
+
+    await rikz.sendMessage(m.chat, msg, { quoted: m });
+  } catch (err) {
+    console.log(err);
+    await rikz.sendMessage(m.chat, { text: 'Error showing price menu.' }, { quoted: m });
+  }
+}
+break;
+
+//================ PRICE (slug) =================//
+case 'price-mlbb-global':
+case 'price-mlbb-brazil':
+case 'price-mlbb-my':
+case 'price-codm':
+case 'price-genshin': {
+  try {
+    const apiKey = "API-GVCDEAD0E38EA13632"; // replace with your key
+    const slug = command.replace('.price-', '').trim();
+
+    // Send temporary "fetching" message
+    const loadingMsg = await rikz.sendMessage(m.chat, { text: `Fetching top-up prices for ${slug}... ⏳` }, { quoted: m });
+
+    const res = await fetch("https://api.gamevia.shop/v1/get_products.php", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey
+      },
+      body: JSON.stringify({ slug })
+    });
+
+    const data = await res.json();
+
+    if (!data.success || !data.products || data.products.length === 0) {
+      await rikz.sendMessage(m.chat, { text: `No products found for ${slug}.` }, { quoted: m });
+      return;
+    }
+
+    let text = `🎮 ${data.game_name} Top-Up Prices\n\n`;
+    for (const p of data.products) {
+      text += `• ${p.name}\n  Code: ${p.srv_code}\n  Price: RM${p.price}\n  Stock: ${p.stock}\n\n`;
+    }
+
+    // Send price list with image
+    await rikz.sendMessage(m.chat, {
+      image: { url: "https://files.catbox.moe/k1vd3r.jpg" },
+      caption: text
+    }, { quoted: m });
+
+  } catch (err) {
+    console.log(err);
+    await rikz.sendMessage(m.chat, { text: 'Failed to load product data.' }, { quoted: m });
+  }
+}
+break;
 
 case "traxc": {
 let itsmenu = 
