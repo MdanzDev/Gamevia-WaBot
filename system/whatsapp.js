@@ -69,212 +69,168 @@ module.exports = rikz = async (rikz, m, chatUpdate, store) => {
 
 
         //================ SWITCH COMMAND =================//
-        switch (true) {
-            case command === 'register':
-                if(userRegistry[m.sender]) return rikz.sendMessage(m.chat, { text: "You're already registered." }, { quoted: m });
-                userRegistry[m.sender] = { name: m.pushName || "User", role: "User" };
-                fs.writeFileSync(pathUsers, JSON.stringify(userRegistry, null, 2));
-                rikz.sendMessage(m.chat, { text: `Registered successfully as ${userRegistry[m.sender].name}` }, { quoted: m });
-            break;
+      switch(command) {
+      case 'register':
+        if(userRegistry[m.sender]) return rikz.sendMessage(m.chat, { text: "You're already registered." }, { quoted: m });
+        userRegistry[m.sender] = { name: m.pushName || "User", role: "User" };
+        fs.writeFileSync(pathUsers, JSON.stringify(userRegistry, null, 2));
+        rikz.sendMessage(m.chat, { text: `Registered successfully as ${userRegistry[m.sender].name}` }, { quoted: m });
+        break;
 
-            
+      case 'menu':
+        rikz.sendMessage(m.chat, {
+          text: `Hello ${m.pushName || "User"}! Choose an option:`,
+          footer: 'Powered by GameVia',
+          buttons: [
+            { buttonId: '.help', buttonText: { displayText: 'Help' }, type: 1 },
+            { buttonId: '.price', buttonText: { displayText: 'Top-Up Prices' }, type: 1 }
+          ],
+          headerType: 1
+        }, { quoted: m });
+        break;
 
+      case 'help':
+        rikz.sendMessage(m.chat, {
+          text: "Commands:\n• menu\n• help\n• price\n• register\n• addreseller (owner)\n• addbalance (owner)\n• history\n• .id",
+          footer: 'Traxc Bot 4.0',
+          buttons: [{ buttonId: '.menu', buttonText: { displayText: 'Main Menu' }, type: 1 }],
+          headerType: 1
+        }, { quoted: m });
+        break;
 
-            case command === 'menu':
-                rikz.sendMessage(m.chat, {
-                    text: `Hello ${m.pushName || "User"}! Choose an option:`,
-                    footer: 'Powered by GameVia',
-                    buttons: [
-                        { buttonId: '.help', buttonText: { displayText: 'Help' }, type: 1 },
-                        { buttonId: '.price', buttonText: { displayText: 'Top-Up Prices' }, type: 1 }
-                    ],
-                    headerType: 1
-                }, { quoted: m });
-            break;
+      case 'price':
+        if(!userRegistry[m.sender]) return rikz.sendMessage(m.chat, { text: "Please register first using register" }, { quoted: m });
+        let buttons = [];
+        for(let slug in gamesInfo){
+          buttons.push({ buttonId: `select-${slug}`, buttonText: { displayText: gamesInfo[slug].name }, type: 1 });
+        }
+        rikz.sendMessage(m.chat, { text: "Select a game to view prices:", footer: "Powered by GameVia", buttons, headerType: 1 }, { quoted: m });
+        break;
 
-            case command === 'help':
-                rikz.sendMessage(m.chat, {
-                    text: "Commands:\n• menu\n• help\n• price\n• register\n• addreseller (owner)\n• addbalance (owner)\n• history (reseller)",
-                    footer: 'Traxc Bot 4.0',
-                    buttons: [{ buttonId: '.menu', buttonText: { displayText: 'Main Menu' }, type: 1 }],
-                    headerType: 1
-                }, { quoted: m });
-            break;
+      case 'addreseller':
+        if(!isCreator) break;
+        const resellerId = args[0];
+        if(!resellerId) return rikz.sendMessage(m.chat, { text: "Provide reseller ID" }, { quoted: m });
+        if(!resellers[resellerId]) resellers[resellerId] = { balance: 0, history: [] };
+        fs.writeFileSync(pathResellers, JSON.stringify(resellers, null, 2));
+        rikz.sendMessage(m.chat, { text: `✅ Reseller ${resellerId} added with 0 balance` }, { quoted: m });
+        break;
 
-            case command === 'price':
-                if(!userRegistry[m.sender]) return rikz.sendMessage(m.chat, { text: "Please register first using register" }, { quoted: m });
-                let buttons = [];
-                for(let slug in gamesInfo){
-                    buttons.push({ buttonId: `.select-${slug}`, buttonText: { displayText: gamesInfo[slug].name }, type: 1 });
-                }
-                rikz.sendMessage(m.chat, { text: "Select a game to view prices:", footer: "Powered by GameVia", buttons, headerType: 1 }, { quoted: m });
-            break;
+      case 'addbalance':
+        if(!isCreator) break;
+        const [resellerId2, amount] = args;
+        if(!resellerId2 || !amount) return rikz.sendMessage(m.chat, { text: "Provide reseller ID and amount" }, { quoted: m });
+        if(!resellers[resellerId2]) resellers[resellerId2] = { balance: 0, history: [] };
+        resellers[resellerId2].balance += parseFloat(amount);
+        fs.writeFileSync(pathResellers, JSON.stringify(resellers, null, 2));
+        rikz.sendMessage(m.chat, { text: `✅ Added RM${amount} to ${resellerId2}. Total: RM${resellers[resellerId2].balance}` }, { quoted: m });
+        break;
 
-            // Select game products
-            //==================== ORDER FLOW ====================//
-
-
-// 3️⃣ Manual .id command shortcut
-case command === 'id':
-{
-    if(args.length < 3) return rikz.sendMessage(m.chat, { text: "Provide USER_ID ZONE_ID SRV_CODE" }, { quoted: m });
-    const [userId, zoneId, srvCode] = args;
-
-    // Optionally: verify srvCode exists in any game
-    let slugFound = null;
-    for(let slug in gamesInfo){
-        slugFound = slug; // for simplicity
+      case 'history':
+        if(resellers[m.sender]){
+          let hist = resellers[m.sender].history || [];
+          let histText = hist.length ? hist.map(o => `• ${o.id} | ${o.product} | ${o.status}`).join("\n") : "No order history yet.";
+          rikz.sendMessage(m.chat, { text: `📜 Your Order History:\n${histText}` }, { quoted: m });
+        } else {
+          let userHist = orders[m.sender] || [];
+          if(!userHist.length) return rikz.sendMessage(m.chat, { text: "No orders yet." }, { quoted: m });
+          const textHist = userHist.map(o => `• ${o.id} | ${o.product} | ${o.status}`).join("\n");
+          rikz.sendMessage(m.chat, { text: `📜 Your Orders:\n${textHist}` }, { quoted: m });
+        }
         break;
     }
 
-    if(!slugFound) return rikz.sendMessage(m.chat, { text: "❌ Invalid product code" }, { quoted: m });
+    // ====================
+    // Dynamic commands
+    // ====================
+    if(command.startsWith('select-')) {
+      const slug = command.replace('select-', '');
+      if(!gamesInfo[slug]) return;
+      try {
+        const res = await fetch("https://api.gamevia.shop/v1/get_products.php", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-api-key": API_KEY },
+          body: JSON.stringify({ slug })
+        });
+        const data = await res.json();
+        if(!data.success || !data.products?.length) return rikz.sendMessage(m.chat, { text: "No products found." }, { quoted: m });
 
-    orderSessions[m.sender] = {
-        step: "awaiting_confirmation",
-        gameSlug: slugFound,
-        product: srvCode,
-        orderData: { user_id: userId, zone_id: zoneId }
-    };
-
-    rikz.sendMessage(m.chat, {
-        text: `✅ Order Info Received\nGame: ${gamesInfo[slugFound].name}\nProduct: ${srvCode}\nUSER_ID: ${userId}\nZONE_ID: ${zoneId}`,
-        footer: "Confirm or change your order",
-        buttons: [
-            { buttonId: 'confirm', buttonText: { displayText: 'Confirm' }, type: 1 },
-            { buttonId: 'change', buttonText: { displayText: 'Change Info' }, type: 1 }
-        ],
-        headerType: 1
-    }, { quoted: m });
-}
-break;
-
-// 4️⃣ Receive USER_ID & ZONE_ID from button flow
-case command.match(/^.+$/)?.input:
-{
-    if(orderSessions[m.sender]?.step === "awaiting_ids"){
-        const session = orderSessions[m.sender];
-        const values = args;
-        if(values.length < 2) return rikz.sendMessage(m.chat, { text: "Incomplete info. Provide USER_ID and ZONE_ID." }, { quoted: m });
-
-        session.step = "awaiting_confirmation";
-        session.orderData = { user_id: values[0], zone_id: values[1] };
+        const productButtons = data.products.map(p => {
+          const profitPrice = (p.price * 1.02).toFixed(2);
+          return { buttonId: `order-${slug}-${p.srv_code}`, buttonText: { displayText: `${p.name} - RM${profitPrice}` }, type: 1 };
+        });
 
         rikz.sendMessage(m.chat, {
-            text: `✅ Order Info Received\nGame: ${gamesInfo[session.gameSlug].name}\nProduct: ${session.product}\nUSER_ID: ${values[0]}\nZONE_ID: ${values[1]}`,
-            footer: "Confirm or change your order",
-            buttons: [
-                { buttonId: 'confirm', buttonText: { displayText: 'Confirm' }, type: 1 },
-                { buttonId: 'change', buttonText: { displayText: 'Change Info' }, type: 1 }
-            ],
-            headerType: 1
+          text: `🎮 ${gamesInfo[slug].name} Products (2% profit included)`,
+          footer: 'Select a product to order',
+          buttons: productButtons,
+          headerType: 1
         }, { quoted: m });
+      } catch(err){
+        console.log(err);
+        rikz.sendMessage(m.chat, { text: "Failed to fetch products." }, { quoted: m });
+      }
     }
+
+    else if(command.startsWith('order-')) {
+      const [slug, srvCode] = command.replace('order-', '').split('-');
+      if(!gamesInfo[slug]) return;
+      orderSessions[m.sender] = { step: "awaiting_ids", gameSlug: slug, product: srvCode };
+      rikz.sendMessage(m.chat, { text: "Please provide USER_ID and ZONE_ID separated by space (e.g., 12345 1):" }, { quoted: m });
+    }
+
+    else if(command === 'id') {
+      if(args.length < 3) return rikz.sendMessage(m.chat, { text: "Provide USER_ID ZONE_ID SRV_CODE" }, { quoted: m });
+      const [userId, zoneId, srvCode] = args;
+      orderSessions[m.sender] = { step: "awaiting_confirmation", gameSlug: "mlbb", product: srvCode, orderData: { user_id: userId, zone_id: zoneId } };
+      rikz.sendMessage(m.chat, {
+        text: `✅ Order Info Received\nGame: MLBB\nProduct: ${srvCode}\nUSER_ID: ${userId}\nZONE_ID: ${zoneId}`,
+        footer: "Confirm or change your order",
+        buttons: [
+          { buttonId: 'confirm', buttonText: { displayText: 'Confirm' }, type: 1 },
+          { buttonId: 'change', buttonText: { displayText: 'Change Info' }, type: 1 }
+        ],
+        headerType: 1
+      }, { quoted: m });
+    }
+
+    else if(orderSessions[m.sender]?.step === 'awaiting_ids') {
+      const session = orderSessions[m.sender];
+      if(args.length < 2) return rikz.sendMessage(m.chat, { text: "Incomplete info. Provide USER_ID and ZONE_ID." }, { quoted: m });
+      session.step = "awaiting_confirmation";
+      session.orderData = { user_id: args[0], zone_id: args[1] };
+      rikz.sendMessage(m.chat, {
+        text: `✅ Order Info Received\nGame: ${gamesInfo[session.gameSlug].name}\nProduct: ${session.product}\nUSER_ID: ${args[0]}\nZONE_ID: ${args[1]}`,
+        footer: "Confirm or change your order",
+        buttons: [
+          { buttonId: 'confirm', buttonText: { displayText: 'Confirm' }, type: 1 },
+          { buttonId: 'change', buttonText: { displayText: 'Change Info' }, type: 1 }
+        ],
+        headerType: 1
+      }, { quoted: m });
+    }
+
+    else if(command === 'confirm') {
+      const session = orderSessions[m.sender];
+      if(!session || session.step !== "awaiting_confirmation") return;
+      const orderId = `PENDING-${Date.now()}`;
+      if(!orders[m.sender]) orders[m.sender] = [];
+      orders[m.sender].push({ id: orderId, gameSlug: session.gameSlug, product: session.product, ...session.orderData, price: 0, status: "Pending" });
+      rikz.sendMessage(m.chat, { text: `✅ Order placed and pending\nOrder ID: ${orderId}` }, { quoted: m });
+      delete orderSessions[m.sender];
+    }
+
+    else if(command === 'change') {
+      const session = orderSessions[m.sender];
+      if(!session || session.step !== "awaiting_confirmation") return;
+      session.step = "awaiting_ids";
+      rikz.sendMessage(m.chat, { text: "Please provide USER_ID and ZONE_ID:" }, { quoted: m });
+    }
+
+  } catch(err) {
+    console.log('\x1b[1;31m' + err + '\x1b[0m');
+  }
 }
-break;
-
-// 5️⃣ Confirm order
-case command == 'confirm':
-{
-    const session = orderSessions[m.sender];
-    if(!session || session.step !== "awaiting_confirmation") break;
-
-    const orderId = `PENDING-${Date.now()}`;
-    if(!orders[m.sender]) orders[m.sender] = [];
-
-    const productPrice = 0; // can fetch from product API if needed
-    orders[m.sender].push({
-        id: orderId,
-        gameSlug: session.gameSlug,
-        product: session.product,
-        ...session.orderData,
-        price: productPrice,
-        status: "Pending"
-    });
-
-    rikz.sendMessage(m.chat, { text: `✅ Order placed and pending\nOrder ID: ${orderId}` }, { quoted: m });
-    delete orderSessions[m.sender];
-}
-break;
-
-// 6️⃣ Change order info
-case command == 'change':
-{
-    const session = orderSessions[m.sender];
-    if(!session || session.step !== "awaiting_confirmation") break;
-
-    session.step = "awaiting_ids";
-    rikz.sendMessage(m.chat, { text: "Please provide USER_ID and ZONE_ID:" }, { quoted: m });
-}
-break;
-
-// 7️⃣ View order history (reseller only)
-case command == 'history':
-{
-    const history = orders[m.sender] || [];
-    if(history.length === 0) return rikz.sendMessage(m.chat, { text: "No orders yet." }, { quoted: m });
-
-    const historyText = history.map(o => `• ID: ${o.id}\nGame: ${gamesInfo[o.gameSlug].name}\nProduct: ${o.product}\nUSER_ID: ${o.user_id}\nZONE_ID: ${o.zone_id}\nPrice: RM${o.price}\nStatus: ${o.status}`).join('\n\n');
-
-    rikz.sendMessage(m.chat, { text: `📜 Your Orders:\n\n${historyText}` }, { quoted: m });
-}
-break;
-            // Creator only: Add reseller
-            case command === 'addreseller':
-                if(!isCreator) break;
-                const resellerId = args[0];
-                if(!resellerId) return rikz.sendMessage(m.chat, { text: "Provide reseller ID" }, { quoted: m });
-                if(!resellers[resellerId]) resellers[resellerId] = { balance: 0, history: [] };
-                fs.writeFileSync(pathResellers, JSON.stringify(resellers, null, 2));
-                rikz.sendMessage(m.chat, { text: `✅ Reseller ${resellerId} added with 0 balance` }, { quoted: m });
-            break;
-
-            // Creator only: Add balance
-            case command === 'addbalance':
-                if(!isCreator) break;
-                const [resellerId2, amount] = args;
-                if(!resellerId2 || !amount) return rikz.sendMessage(m.chat, { text: "Provide reseller ID and amount" }, { quoted: m });
-                if(!resellers[resellerId2]) resellers[resellerId2] = { balance: 0, history: [] };
-                resellers[resellerId2].balance += parseFloat(amount);
-                fs.writeFileSync(pathResellers, JSON.stringify(resellers, null, 2));
-                rikz.sendMessage(m.chat, { text: `✅ Added RM${amount} to ${resellerId2}. Total: RM${resellers[resellerId2].balance}` }, { quoted: m });
-            break;
-
-            // Reseller order history
-            case command === 'history':
-                if(!resellers[m.sender]) return rikz.sendMessage(m.chat, { text: "You are not a reseller." }, { quoted: m });
-                let hist = resellers[m.sender].history || [];
-                let histText = hist.length ? hist.map(o => `• ${o.id} | ${o.product} | ${o.status}`).join("\n") : "No order history yet.";
-                rikz.sendMessage(m.chat, { text: `📜 Your Order History:\n${histText}` }, { quoted: m });
-            break;
-
-
-default:
-  
-
-  // Handle dynamic buttons
-  if(command.startsWith('select-')) {
-    const slug = command.replace('select-', '');
-    if(!gamesInfo[slug]) return;
-    // Fetch products & show buttons
-    return;
-  } 
-
- if(command.startsWith('order-')) {
-    const [slug, srvCode] = command.replace('order-', '').split('-');
-    if(!gamesInfo[slug]) return;
-    
-    orderSessions[m.sender] = { step: "awaiting_ids", gameSlug: slug, product: srvCode };
-
-    rikz.sendMessage(m.chat, { text: "Please provide USER_ID and ZONE_ID separated by space (e.g., 12345 1):" }, { quoted: m });
-}
-
-
-break;
-
-} // switch ends here
-
-} catch (err) {
-  console.log('\x1b[1;31m' + err + '\x1b[0m');
 } // try ends here
 
 } // async function ends here
