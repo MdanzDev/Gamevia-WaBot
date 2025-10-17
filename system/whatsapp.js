@@ -216,41 +216,45 @@ module.exports = rikz = async (rikz, m, chatUpdate, store) => {
             break;
 
 
-  default:
-
-                // Inside default or outside switch
-if(orderSessions[m.sender]?.step === "awaiting_ids") {
+default:
+  // Check if user is in an active order session
+  if(orderSessions[m.sender]?.step === "awaiting_ids") {
     const session = orderSessions[m.sender];
-    const values = body.trim().split(/ +/); // use raw message text
-    if(values.length < 2) return rikz.sendMessage(m.chat, { text: "Incomplete info. Provide USER_ID and ZONE_ID." }, { quoted: m });
+    const values = body.trim().split(/ +/); // raw message text
+    if(values.length < 2) 
+      return rikz.sendMessage(m.chat, { text: "Incomplete info. Provide USER_ID and ZONE_ID." }, { quoted: m });
 
     session.step = "awaiting_confirmation";
     session.orderData = { user_id: values[0], zone_id: values[1] };
     rikz.sendMessage(m.chat, {
-        text: `✅ Order Info Received\nGame: ${gamesInfo[session.gameSlug].name}\nProduct: ${session.product}\nUSER_ID: ${values[0]}\nZONE_ID: ${values[1]}`,
-        footer: "Confirm or change your order",
-        buttons: [
-            { buttonId: 'confirm', buttonText: { displayText: 'Confirm' }, type: 1 },
-            { buttonId: 'change', buttonText: { displayText: 'Change Info' }, type: 1 }
-        ],
-        headerType: 1
+      text: `✅ Order Info Received\nGame: ${gamesInfo[session.gameSlug].name}\nProduct: ${session.product}\nUSER_ID: ${values[0]}\nZONE_ID: ${values[1]}`,
+      footer: "Confirm or change your order",
+      buttons: [
+        { buttonId: 'confirm', buttonText: { displayText: 'Confirm' }, type: 1 },
+        { buttonId: 'change', buttonText: { displayText: 'Change Info' }, type: 1 }
+      ],
+      headerType: 1
     }, { quoted: m });
-}
+    return; // important to stop further execution
+  }
 
-                
-    // Dynamic button handlers
-    if(command.startsWith('select-')) {
-      const slug = command.replace('select-', '');
-      if(!gamesInfo[slug]) return;
-      // Fetch products & show buttons
-    } else if(command.startsWith('order-')) {
-      const [slug, srvCode] = command.replace('order-', '').split('-');
-      if(!gamesInfo[slug]) return;
-      // Ask for USER_ID and ZONE_ID
-    } else if(orderSessions[m.sender]?.step === 'awaiting_ids') {
-      // Handle user sending IDs
-    }
-    break;
+  // Handle dynamic buttons
+  if(command.startsWith('select-')) {
+    const slug = command.replace('select-', '');
+    if(!gamesInfo[slug]) return;
+    // Fetch products & show buttons
+    return;
+  } 
+
+  if(command.startsWith('order-')) {
+    const [slug, srvCode] = command.replace('order-', '').split('-');
+    if(!gamesInfo[slug]) return;
+    // Ask for USER_ID and ZONE_ID
+    return;
+  }
+
+break;
+
 } // switch ends here
 
 } catch (err) {
