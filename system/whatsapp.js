@@ -86,7 +86,7 @@ const gamesInfo = {
     
 const path = './system/database/users.json';
 
-let userRegistry = {};
+const userRegistry = {};
 if (fs.existsSync(path)) {
     userRegistry = JSON.parse(fs.readFileSync(path));
 } else {
