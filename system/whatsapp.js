@@ -1580,7 +1580,7 @@ ${metrics.popularCommands.map(cmd =>
             const slug = command.replace('select-', '');
             
             try {
-                const data = await cachedApiCall('get_products.php', { slug });
+                const data = await ApiCall('get_products.php', { slug });
                 if(!data.success || !data.products?.length) {
                     return rikz.sendMessage(m.chat, { text: "No products available for this game." }, { quoted: m });
                 }
