@@ -347,6 +347,9 @@ break;
 
 //================ PRICE MENU =================//
 // PRICE MENU (button selection)
+// ================= PRICE MENU (button selection) =================
+case 'price': {
+// PRICE MENU (button selection)
 case 'price': {
   try {
     const pushname = m.pushName || "User";
@@ -356,13 +359,13 @@ case 'price': {
       { buttonId: '.price-mlbb-global', buttonText: { displayText: 'MLBB Global' }, type: 1 },
       { buttonId: '.price-mlbb-brazil', buttonText: { displayText: 'MLBB Brazil' }, type: 1 },
       { buttonId: '.price-mlbb-my', buttonText: { displayText: 'MLBB Malaysia' }, type: 1 },
-      { buttonId: '.price-codm', buttonText: { displayText: 'Call of Duty Mobile' }, type: 1 },
-      { buttonId: '.price-genshin', buttonText: { displayText: 'Genshin Impact' }, type: 1 },
-      { buttonId: '.price-hok', buttonText: { displayText: 'Honor of Kings' }, type: 1 } // NEW
+      { buttonId: '.price-codm', buttonText: { displayText: 'COD Mobile' }, type: 1 },
+      { buttonId: '.price-hok', buttonText: { displayText: 'Honor of Kings' }, type: 1 },
+      { buttonId: '.price-genshin', buttonText: { displayText: 'Genshin Impact' }, type: 1 }
     ];
 
     const msg = {
-      text: `Hello ${pushname}\nRole: ${role}\n\nSelect a game below to check top-up prices.`,
+      text: `Hello ${pushname}!\nRole: ${role}\n\nSelect a game below to view top-up prices.`,
       footer: 'Powered by GameVia',
       buttons,
       headerType: 4
@@ -377,35 +380,32 @@ case 'price': {
 break;
 
 // PRICE (slug) -> Show all prices for a selected game
+const slugMap = {
+  'price-mlbb-global': 'mlbb-global',
+  'price-mlbb-brazil': 'mlbb-brazil',
+  'price-mlbb-my': 'mlbb-my',
+  'price-codm': 'codm',
+  'price-hok': 'hok',
+  'price-genshin': 'genshin'
+};
+
 case 'price-mlbb-global':
 case 'price-mlbb-brazil':
 case 'price-mlbb-my':
 case 'price-codm':
-case 'price-genshin':
-case 'price-hok': { // NEW
+case 'price-hok':
+case 'price-genshin': {
   try {
-    const apiKey = "API-GVCDEAD0E38EA13632"; // replace with your key
+    const apiKey = "API-GVCDEAD0E38EA13632"; // replace with your GameVia API key
+    const slug = slugMap[command]; // get correct slug
 
-    const slugMap = {
-      'price-mlbb-global': 'mlbb',
-      'price-mlbb-brazil': 'mlbb-br',
-      'price-mlbb-my': 'mlbb-my',
-      'price-codm': 'codm',
-      'price-genshin': 'genshin',
-      'price-hok': 'hok' // NEW
-    };
-
-    const slug = slugMap[command];
-    if (!slug) {
-      await rikz.sendMessage(m.chat, { text: '❌ Invalid game selection.' }, { quoted: m });
-      return;
-    }
+    await rikz.sendMessage(m.chat, { text: `Fetching top-up prices for ${slug}... ⏳` }, { quoted: m });
 
     const res = await fetch("https://api.gamevia.shop/v1/get_products.php", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey
+      headers: { 
+        "Content-Type": "application/json", 
+        "x-api-key": apiKey 
       },
       body: JSON.stringify({ slug })
     });
@@ -413,25 +413,31 @@ case 'price-hok': { // NEW
     const data = await res.json();
 
     if (!data.success || !data.products || data.products.length === 0) {
-      await rikz.sendMessage(m.chat, { text: `❌ No products found for ${slug}.` }, { quoted: m });
+      await rikz.sendMessage(m.chat, { text: `No products found for ${slug}.` }, { quoted: m });
       return;
     }
 
-    let text = `🎮 ${data.game_name} Top-Up Prices\n\n`;
-    for (const p of data.products) {
-      text += `• ${p.name}\n  Code: ${p.srv_code}\n  Price: RM${p.price}\n  Stock: ${p.stock}\n\n`;
-    }
+    let text = `🎮 ${data.game_name || slug} Top-Up Prices\n\n`;
+    text += `Slug: ${slug}\n\n`;
+
+    data.products.forEach((p, i) => {
+      const price = p.price ?? "N/A";
+      const stock = p.stock ?? "N/A";
+      text += `${i+1}. ${p.name}\n   Code: ${p.srv_code}\n   Price: RM${price}\n   Stock: ${stock}\n\n`;
+    });
 
     await rikz.sendMessage(m.chat, {
       image: { url: "https://files.catbox.moe/k1vd3r.jpg" },
       caption: text
     }, { quoted: m });
+
   } catch (err) {
     console.log(err);
-    await rikz.sendMessage(m.chat, { text: '❌ Failed to load product data.' }, { quoted: m });
+    await rikz.sendMessage(m.chat, { text: 'Failed to load product data.' }, { quoted: m });
   }
 }
 break;
+    
 case "traxc": {
 let itsmenu = 
 `
