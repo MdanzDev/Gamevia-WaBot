@@ -604,10 +604,9 @@ Please confirm your order:`;
                 footer: "Best regional rates • Secure & Fast",
                 buttons: [
                     { buttonId: '.confirm', buttonText: { displayText: '✅ Confirm Order' }, type: 1 },
-                    { buttonId: '.change', buttonText: { displayText: '✏️ Change Info' }, type: 1 }
-                ],
+                    { buttonId: '.change', buttonText: { displayText: '✏️ Change Info' }, type: 1 }],
                 headerType: 1
-            }, { quoted: m };
+            }, { quoted: m });
         
 
         // Track abandoned carts
