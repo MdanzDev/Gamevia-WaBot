@@ -427,34 +427,65 @@ Thank you for your order!`;
             }, { quoted: m });
         }
 
-        else if(orderSessions[m.sender]?.step === 'awaiting_ids') {
-            const session = orderSessions[m.sender];
-            if(args.length < 2) return rikz.sendMessage(m.chat, { 
-                text: "❌ *Incomplete Information*\n\nPlease provide both USER_ID and ZONE_ID\nFormat: user_id zone_id" 
-            }, { quoted: m });
+      else if(orderSessions[m.sender]?.step === 'awaiting_ids') {
+    const session = orderSessions[m.sender];
+    
+    // DEBUG: Log the session and received data
+    console.log('DEBUG - Session:', session);
+    console.log('DEBUG - Body:', body);
+    console.log('DEBUG - Args:', args);
+    console.log('DEBUG - Raw input:', body.trim());
+    
+    // Parse the input directly from body instead of relying on args
+    const inputParts = body.trim().split(/ +/);
+    console.log('DEBUG - Input parts:', inputParts);
+    
+    if(inputParts.length < 2) {
+        return rikz.sendMessage(m.chat, { 
+            text: "❌ *Incomplete Information*\n\nPlease provide both USER_ID and ZONE_ID\nFormat: user_id zone_id\n\nExample: 123456789 1234" 
+        }, { quoted: m });
+    }
 
-            session.step = "awaiting_confirmation";
-            session.orderData = { user_id: args[0], zone_id: args[1] };
+    const userId = inputParts[0];
+    const zoneId = inputParts[1];
+    
+    // Validate that they are numbers
+    if (!userId || !zoneId || isNaN(userId) || isNaN(zoneId)) {
+        return rikz.sendMessage(m.chat, { 
+            text: "❌ *Invalid Format*\n\nUSER_ID and ZONE_ID must be numbers\n\nExample: 123456789 1234" 
+        }, { quoted: m });
+    }
 
-            // Show confirmation
-            const gameName = gamesList[session.gameSlug]?.name || session.gameSlug;
-            const confirmationText = `✅ *Order Information Received*\n
+    session.step = "awaiting_confirmation";
+    session.orderData = { 
+        user_id: userId.trim(), 
+        zone_id: zoneId.trim() 
+    };
+    
+    // Generate a temporary order ID for tracking
+    session.orderId = `TEMP-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+
+    // Show confirmation
+    const gameName = gamesList[session.gameSlug]?.name || session.gameSlug;
+    const confirmationText = `✅ *Order Information Received*\n
 🎮 *Game:* ${gameName}
 📦 *Product:* ${session.productCode}
-👤 *USER_ID:* ${args[0]}
-📍 *ZONE_ID:* ${args[1]}\n
+👤 *USER_ID:* ${userId}
+📍 *ZONE_ID:* ${zoneId}\n
 Please confirm your order:`;
 
-            rikz.sendMessage(m.chat, {
-                text: confirmationText,
-                footer: "Check the information above before confirming",
-                buttons: [
-                    { buttonId: 'confirm', buttonText: { displayText: '✅ Confirm Order' }, type: 1 },
-                    { buttonId: 'change', buttonText: { displayText: '✏️ Change Info' }, type: 1 }
-                ],
-                headerType: 1
-            }, { quoted: m });
-        }
+    await rikz.sendMessage(m.chat, {
+        text: confirmationText,
+        footer: "Check the information above before confirming",
+        buttons: [
+            { buttonId: 'confirm', buttonText: { displayText: '✅ Confirm Order' }, type: 1 },
+            { buttonId: 'change', buttonText: { displayText: '✏️ Change Info' }, type: 1 }
+        ],
+        headerType: 1
+    }, { quoted: m });
+    
+    console.log('DEBUG - Session updated:', orderSessions[m.sender]);
+}
 
     } catch(err) {
         console.log('\x1b[1;31m' + err + '\x1b[0m');
