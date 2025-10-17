@@ -97,6 +97,28 @@ console.log('DEBUG: body:', body);
                 rikz.sendMessage(m.chat, { text: `Registered successfully as ${userRegistry[m.sender].name}` }, { quoted: m });
             break;
 
+                case 'id': 
+    if(args.length < 2) return rikz.sendMessage(m.chat, { text: "Usage: .id <USER_ID> <ZONE_ID>" }, { quoted: m });
+    const sessionSlug = args[2] || "mlbb"; // default game if needed
+    const sessionProduct = args[3] || lastSelectedProduct[m.sender]; // track last product if you want
+
+    if(!sessionProduct) return rikz.sendMessage(m.chat, { text: "Select a product first using .order-<slug>-<srv_code>" }, { quoted: m });
+
+    // save order session temporarily
+    orderSessions[m.sender] = { step: "awaiting_confirmation", gameSlug: sessionSlug, product: sessionProduct, orderData: { user_id: args[0], zone_id: args[1] } };
+
+    rikz.sendMessage(m.chat, {
+        text: `✅ Order Info Received\nGame: ${gamesInfo[sessionSlug].name}\nProduct: ${sessionProduct}\nUSER_ID: ${args[0]}\nZONE_ID: ${args[1]}`,
+        footer: "Confirm or change your order",
+        buttons: [
+            { buttonId: 'confirm', buttonText: { displayText: 'Confirm' }, type: 1 },
+            { buttonId: 'change', buttonText: { displayText: 'Change Info' }, type: 1 }
+        ],
+        headerType: 1
+    }, { quoted: m });
+break;
+
+
             case command === 'menu':
                 rikz.sendMessage(m.chat, {
                     text: `Hello ${m.pushName || "User"}! Choose an option:`,
