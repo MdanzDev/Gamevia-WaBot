@@ -68,9 +68,9 @@ console.log('DEBUG: orderSessions for', m.sender, orderSessions[m.sender]);
 console.log('DEBUG: body:', body);
 
         
-        if(orderSessions[m.sender]?.step === "awaiting_ids") {
+       if(orderSessions[m.sender]?.step === "awaiting_ids") {
     const session = orderSessions[m.sender];
-    const values = body.trim().split(/ +/); // split by space
+    const values = body.trim().split(/ +/);
     if(values.length < 2) return rikz.sendMessage(m.chat, { text: "Incomplete info. Provide USER_ID and ZONE_ID." }, { quoted: m });
 
     session.step = "awaiting_confirmation";
@@ -240,26 +240,7 @@ console.log('DEBUG: body:', body);
 
 
 default:
-  // Check if user is in an active order session
-  if(orderSessions[m.sender]?.step === "awaiting_ids") {
-    const session = orderSessions[m.sender];
-    const values = body.trim().split(/ +/); // raw message text
-    if(values.length < 2) 
-      return rikz.sendMessage(m.chat, { text: "Incomplete info. Provide USER_ID and ZONE_ID." }, { quoted: m });
-
-    session.step = "awaiting_confirmation";
-    session.orderData = { user_id: values[0], zone_id: values[1] };
-    rikz.sendMessage(m.chat, {
-      text: `✅ Order Info Received\nGame: ${gamesInfo[session.gameSlug].name}\nProduct: ${session.product}\nUSER_ID: ${values[0]}\nZONE_ID: ${values[1]}`,
-      footer: "Confirm or change your order",
-      buttons: [
-        { buttonId: 'confirm', buttonText: { displayText: 'Confirm' }, type: 1 },
-        { buttonId: 'change', buttonText: { displayText: 'Change Info' }, type: 1 }
-      ],
-      headerType: 1
-    }, { quoted: m });
-    return; // important to stop further execution
-  }
+  
 
   // Handle dynamic buttons
   if(command.startsWith('select-')) {
@@ -269,12 +250,15 @@ default:
     return;
   } 
 
-  if(command.startsWith('order-')) {
+ if(command.startsWith('order-')) {
     const [slug, srvCode] = command.replace('order-', '').split('-');
     if(!gamesInfo[slug]) return;
-    // Ask for USER_ID and ZONE_ID
-    return;
-  }
+    
+    orderSessions[m.sender] = { step: "awaiting_ids", gameSlug: slug, product: srvCode };
+
+    rikz.sendMessage(m.chat, { text: "Please provide USER_ID and ZONE_ID separated by space (e.g., 12345 1):" }, { quoted: m });
+}
+
 
 break;
 
