@@ -373,6 +373,7 @@ case 'register': {
     }
 }
 break;
+
 // 2. Deposit / Wallet Top-Up
 case 'deposit': {
   const amount = parseFloat(args[0]);
@@ -384,7 +385,6 @@ case 'deposit': {
 }
 break;
 
-// 3. Price Menu
 // ==========================
 // PRICE MENU (button selection)
 case 'price': {
@@ -454,15 +454,21 @@ case /^price-(.+)$/i.test(command) && command: {
             return;
         }
 
-        let text = `🎮 ${data.game_name} Top-Up Prices\n\n`;
-        for (const p of data.products) {
-            text += `• ${p.name}\n  Code: ${p.srv_code}\n  Price: RM${p.price}\n  Stock: ${p.stock}\n\n`;
-        }
+        // convert products to buttons
+        const productButtons = data.products.map(p => ({
+            buttonId: `.order-${p.srv_code}`, 
+            buttonText: { displayText: `${p.name} - RM${p.price}` },
+            type: 1
+        }));
 
-        await rikz.sendMessage(m.chat, {
-            image: { url: "https://files.catbox.moe/k1vd3r.jpg" },
-            caption: text
-        }, { quoted: m });
+        const msg = {
+            text: `🎮 ${data.game_name} Top-Up Prices\nSelect a product to order:`,
+            footer: 'Powered by GameVia',
+            buttons: productButtons,
+            headerType: 1
+        };
+
+        await rikz.sendMessage(m.chat, msg, { quoted: m });
     } catch (err) {
         console.log(err);
         await rikz.sendMessage(m.chat, { text: 'Failed to load product data.' }, { quoted: m });
@@ -470,22 +476,37 @@ case /^price-(.+)$/i.test(command) && command: {
 }
 break;
 
+// ==========================
+// ORDER FLOW (stub) - user selects a product button
+case /^order-(.+)$/i.test(command) && command: {
+    try {
+        const sender = m?.sender || m?.key?.remoteJid || "unknown@user";
+        const pushname = m?.pushName || "User";
+        const srv_code = command.replace('order-', '').trim();
 
+        // Check registration
+        global.registeredUsers = global.registeredUsers || {};
+        if (!global.registeredUsers[sender]) {
+            await rikz.sendMessage(m.chat, { text: `❌ You need to register first with .register` }, { quoted: m });
+            return;
+        }
 
+        // Save product selection in session
+        global.orderSessions = global.orderSessions || {};
+        global.orderSessions[sender] = { srv_code, step: "awaiting_game_id" };
 
-// 5. Order Creation / Ask Game ID
-case 'order': {
-  if (!global.registry[m.sender]) return rikz.sendMessage(m.chat, { text: 'Please register first using .register' }, { quoted: m });
+        await rikz.sendMessage(m.chat, { text: `You selected ${srv_code}. Please send your Game ID to continue.` }, { quoted: m });
 
-  const [slug, srv_code, price] = args;
-  const userWallet = global.registry[m.sender].wallet;
-
-  if (userWallet < parseFloat(price)) return rikz.sendMessage(m.chat, { text: `Insufficient balance. Wallet: RM${userWallet}. Please deposit first.` }, { quoted: m });
-
-  global.sessions[m.sender] = { slug, srv_code, price, step: "awaiting_game_id" };
-  await rikz.sendMessage(m.chat, { text: `You selected ${srv_code} for RM${price}. Please reply with your Game ID using:\n.gameid YOUR_ID` }, { quoted: m });
+    } catch (err) {
+        console.log(err);
+        await rikz.sendMessage(m.chat, { text: 'Failed to initiate order.' }, { quoted: m });
+    }
 }
 break;
+
+// ==========================
+// REGISTER (example)
+
 
 // 6. Set Game ID
 case 'gameid': {
