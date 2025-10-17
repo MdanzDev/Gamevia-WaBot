@@ -1516,7 +1516,7 @@ ${metrics.popularCommands.map(cmd =>
                 break;
 
             default:
-       
+        }
         // =============== DYNAMIC COMMANDS ===============
              if(command.startsWith('category-')) {
             const categoryKey = command.replace('category-', '');
