@@ -478,6 +478,7 @@ if (fs.existsSync(path)) {
         await rikz.sendMessage(m.chat, { text: `Fetching top-up prices for ${gamesInfo[slug].name}... ⏳` }, { quoted: m });
 
         try {
+            const API_KEY = "API-GVCDEAD0E38EA13632";
             const res = await fetch("https://api.gamevia.shop/v1/get_products.php", {
                 method: "POST",
                 headers: { "Content-Type": "application/json", "x-api-key": API_KEY },
@@ -491,7 +492,7 @@ if (fs.existsSync(path)) {
 
             const productButtons = data.products.map(p => ({
                 buttonId: `.order-${slug}-${p.srv_code}`,
-                buttonText: { displayText: `${p.name} - RM${p.price}` },
+                buttonText: { displayText: `${p.name} - RM${p.vprice}` },
                 type: 1
             }));
 
