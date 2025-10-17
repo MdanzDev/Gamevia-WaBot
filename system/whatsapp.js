@@ -385,55 +385,65 @@ break;
 
 
 // ===== REGISTER ===== //
-// ===== REGISTER ===== //
-case "register": {
-    const pushname = m.pushName || "User";
-    if (userRegistry[m.sender]) {
-        await rikz.sendMessage(m.chat, { text: "You're already registered." }, { quoted: m });
-        return;
+
+    // ===== REGISTER ===== //
+    case "register": {
+        const pushname = m.pushName || "User";
+        if (userRegistry[m.sender]) {
+            await rikz.sendMessage(m.chat, { text: "You're already registered." }, { quoted: m });
+            return;
+        }
+        userRegistry[m.sender] = { name: pushname, role: "User" };
+        await rikz.sendMessage(m.chat, { text: `Registered successfully as ${pushname}` }, { quoted: m });
     }
-    userRegistry[m.sender] = { name: pushname, role: "User" };
+    break;
 
-    // Save to JSON
-    fs.writeFileSync(path, JSON.stringify(userRegistry, null, 2));
+    // ===== PRICE MENU (LIST) ===== //
+    case "price": {
+        if (!userRegistry[m.sender]) {
+            await rikz.sendMessage(m.chat, { text: "Please register first using .register" }, { quoted: m });
+            return;
+        }
 
-    await rikz.sendMessage(m.chat, { text: `Registered successfully as ${pushname}` }, { quoted: m });
-}
-break;
+        const pushname = m.pushName || "User";
+        const games = Object.keys(gamesInfo);
+        const half = Math.ceil(games.length / 2);
 
-// ===== PRICE MENU ===== //
-case "price": {
-    if (!userRegistry[m.sender]) {
-        await rikz.sendMessage(m.chat, { text: "Please register first using .register" }, { quoted: m });
-        return;
+        const section1 = {
+            title: "Popular Games",
+            rows: games.slice(0, half).map(slug => ({
+                title: gamesInfo[slug].name,
+                rowId: `.select-${slug}`
+            }))
+        };
+        const section2 = {
+            title: "Other Games",
+            rows: games.slice(half).map(slug => ({
+                title: gamesInfo[slug].name,
+                rowId: `.select-${slug}`
+            }))
+        };
+
+        const listMsg = {
+            text: `Hello ${pushname}\nSelect a game to view top-up prices:`,
+            footer: "Powered by GameVia",
+            title: "GameVia Top-Up Menu",
+            buttonText: "Select Game",
+            sections: [section1, section2]
+        };
+
+        await rikz.sendMessage(m.chat, listMsg, { quoted: m });
     }
+    break;
 
-    const pushname = m.pushName || "User";
-    const buttons = Object.keys(gamesInfo).map(slug => ({
-        buttonId: `.select-${slug}`,
-        buttonText: { displayText: gamesInfo[slug].name },
-        type: 1
-    }));
+    // ===== HANDLE LIST SELECTION ===== //
+    default: {
 
-    const msg = {
-        text: `Hello ${pushname}\nSelect a game to view top-up prices:`,
-        footer: 'Powered by GameVia',
-        buttons,
-        headerType: 1
-    };
-
-    await rikz.sendMessage(m.chat, msg, { quoted: m });
-}
-break;
-
-
-    // ===== PRODUCT SELECTION / ORDER ===== //
-     {
-        // handle .select-* buttons
+        // ===== GAME SELECTION ===== //
         const matchSelect = command.match(/^\.select-(.+)$/);
         if (matchSelect) {
             const slug = matchSelect[1];
-            if (!gamesInfo[slug]) break;
+            if (!gamesInfo[slug]) return;
 
             orderSessions[m.sender] = { step: "awaiting_product", gameSlug: slug };
             await rikz.sendMessage(m.chat, { text: `Fetching top-up prices for ${gamesInfo[slug].name}... ⏳` }, { quoted: m });
@@ -447,46 +457,53 @@ break;
                 const data = await res.json();
                 if (!data.success || !data.products || data.products.length === 0) {
                     await rikz.sendMessage(m.chat, { text: `No products found for ${gamesInfo[slug].name}` }, { quoted: m });
-                    break;
+                    return;
                 }
 
-                const productButtons = data.products.map(p => ({
-                    buttonId: `.order-${slug}-${p.srv_code}`,
-                    buttonText: { displayText: `${p.name} - RM${p.price}` },
-                    type: 1
-                }));
+                const productSection = [{
+                    title: `${gamesInfo[slug].name} Top-Up`,
+                    rows: data.products.map(p => ({
+                        title: `${p.name} - RM${p.price}`,
+                        rowId: `.order-${slug}-${p.srv_code}`,
+                        description: `Stock: ${p.stock}`
+                    }))
+                }];
 
-                await rikz.sendMessage(m.chat, {
-                    text: `🎮 ${gamesInfo[slug].name} Top-Up Prices\nSelect a product to order:`,
-                    footer: 'You can select any product',
-                    buttons: productButtons,
-                    headerType: 1
-                }, { quoted: m });
+                const productList = {
+                    text: `Select a product to order:`,
+                    footer: "You can select any product",
+                    title: `${gamesInfo[slug].name} Prices`,
+                    buttonText: "Choose Product",
+                    sections: productSection
+                };
+
+                await rikz.sendMessage(m.chat, productList, { quoted: m });
 
             } catch (err) {
                 console.log(err);
                 await rikz.sendMessage(m.chat, { text: "Failed to fetch product data." }, { quoted: m });
             }
-            break;
+            return;
         }
 
-        // handle .order-* buttons
+        // ===== PRODUCT ORDER ===== //
         const matchOrder = command.match(/^\.order-(.+)-(.+)$/);
         if (matchOrder) {
             const slug = matchOrder[1];
             const srvCode = matchOrder[2];
-            if (!gamesInfo[slug]) break;
+            if (!gamesInfo[slug]) return;
 
             orderSessions[m.sender] = { ...orderSessions[m.sender], step: "awaiting_ids", product: srvCode };
+
             const requiredFields = gamesInfo[slug].required;
             let askText = "Please provide the following info:\n";
             requiredFields.forEach(f => askText += `• ${f.replace("_", " ").toUpperCase()}\n`);
 
             await rikz.sendMessage(m.chat, { text: askText }, { quoted: m });
-            break;
+            return;
         }
 
-        // handle user input for order info
+        // ===== RECEIVE USER INPUT FOR ORDER ===== //
         if (orderSessions[m.sender] && orderSessions[m.sender].step === "awaiting_ids") {
             const session = orderSessions[m.sender];
             const slug = session.gameSlug;
@@ -495,7 +512,7 @@ break;
             const values = m.text.split(/[\s,]+/);
             if (values.length < requiredFields.length) {
                 await rikz.sendMessage(m.chat, { text: `You must provide all fields: ${requiredFields.join(", ")}` }, { quoted: m });
-                break;
+                return;
             }
 
             const orderData = {};
@@ -517,17 +534,21 @@ break;
                 buttons: confirmButtons,
                 headerType: 1
             });
-            break;
+            return;
         }
 
-        // confirm or change
+        // ===== CONFIRM OR CHANGE ===== //
         if (command === ".confirm" && orderSessions[m.sender] && orderSessions[m.sender].step === "awaiting_confirmation") {
             const session = orderSessions[m.sender];
+
             try {
                 const res = await fetch("https://api.gamevia.shop/v1/order.php", {
                     method: "POST",
                     headers: { "Content-Type": "application/json", "x-api-key": API_KEY },
-                    body: JSON.stringify({ srv_code: session.product, ...session.orderData })
+                    body: JSON.stringify({
+                        srv_code: session.product,
+                        ...session.orderData
+                    })
                 });
                 const data = await res.json();
                 if (data.success) {
@@ -539,8 +560,9 @@ break;
                 console.log(err);
                 await rikz.sendMessage(m.chat, { text: `❌ Order Failed` }, { quoted: m });
             }
+
             delete orderSessions[m.sender];
-            break;
+            return;
         }
 
         if (command === ".change" && orderSessions[m.sender] && orderSessions[m.sender].step === "awaiting_confirmation") {
@@ -550,9 +572,10 @@ break;
             let askText = "Please provide the following info:\n";
             requiredFields.forEach(f => askText += `• ${f.replace("_", " ").toUpperCase()}\n`);
             await rikz.sendMessage(m.chat, { text: askText }, { quoted: m });
-            break;
+            return;
         }
     }
+    break;
 
     // ===== TRAXC MENU ===== //
     case "traxc": {
