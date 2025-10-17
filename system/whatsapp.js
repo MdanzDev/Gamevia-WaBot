@@ -190,7 +190,7 @@ module.exports = rikz = async (rikz, m, chatUpdate, store) => {
                 }
 
                 const buttons = Object.values(gamesList).map(game => ({
-                    buttonId: `select-${game.slug}`,
+                    buttonId: `.select-${game.slug}`,
                     buttonText: { displayText: game.name },
                     type: 1
                 }));
@@ -287,9 +287,9 @@ module.exports = rikz = async (rikz, m, chatUpdate, store) => {
                 if(!data.success || !data.products?.length) return rikz.sendMessage(m.chat, { text: "No products available for this game." }, { quoted: m });
 
                 const productButtons = data.products.map(product => {
-                    const profitPrice = (product.price * 1.02).toFixed(2);
+                    const profitPrice = (product.vprice * 1.02).toFixed(2);
                     return {
-                        buttonId: `order-${slug}-${product.srv_code}`,
+                        buttonId: `.order-${slug}-${product.srv_code}`,
                         buttonText: { displayText: `${product.name} - RM${profitPrice}` },
                         type: 1
                     };
@@ -357,8 +357,8 @@ Please confirm your order:`;
                 text: confirmationText,
                 footer: "Check the information above before confirming",
                 buttons: [
-                    { buttonId: 'confirm', buttonText: { displayText: '✅ Confirm Order' }, type: 1 },
-                    { buttonId: 'change', buttonText: { displayText: '✏️ Change Info' }, type: 1 }
+                    { buttonId: '.confirm', buttonText: { displayText: '✅ Confirm Order' }, type: 1 },
+                    { buttonId: '.change', buttonText: { displayText: '✏️ Change Info' }, type: 1 }
                 ],
                 headerType: 1
             }, { quoted: m });
