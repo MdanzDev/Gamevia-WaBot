@@ -18,30 +18,6 @@ const { getBuffer, getGroupAdmins, getSizeMedia, fetchJson, sleep, isUrl, runtim
 
 const API_KEY = "API-GVCDEAD0E38EA13632";
 
-// In-memory storage for sessions and registry
-global.orderSessions = {};
-global.userRegistry = {}; // store registered users { jid: { name, role } }
-
-const gamesInfo = {
-    mlbb: { name: "Mobile Legends Malaysia", required: ["user_id", "server_id"] },
-    mlbbbrazil: { name: "Mobile Legends Brazil", required: ["user_id", "server_id"] },
-    mlbbgb: { name: "Mobile Legends Global", required: ["user_id", "server_id"] },
-    mlbbfrmy: { name: "MLBB First Recharge MY", required: ["user_id", "server_id"] },
-    mlbbfrid: { name: "MLBB First Recharge ID", required: ["user_id", "server_id"] },
-    mlbbflashmy: { name: "MLBB Malaysia FS", required: ["user_id", "server_id"] },
-    mlbbid: { name: "MLBB Indonesia", required: ["user_id", "server_id"] },
-    mlbbiditem: { name: "MLBB Indonesia Item", required: ["user_id", "server_id"] },
-    mlbbitem: { name: "MLBB Malaysia Item", required: ["user_id", "server_id"] },
-    mlbbgbitem: { name: "MLBB Global Item", required: ["user_id", "server_id"] },
-    ffsgmyitem: { name: "Free Fire SG/MY Item", required: ["user_id"] },
-    ffsgmy: { name: "Free Fire SG/MY", required: ["user_id"] },
-    mcggid: { name: "Magic Chess Go Go ID", required: ["user_id"] },
-    valomy: { name: "Valorant PC MY", required: ["user_id"] },
-    valoid: { name: "Valorant PC ID", required: ["user_id"] },
-    codmmy: { name: "CODM MY/SG", required: ["user_id"] },
-    dragonrise: { name: "Dragon Raja Rerise SEA", required: ["user_id"] },
-    pubg: { name: "PUBG Mobile", required: ["user_id"] }
-//===============
 module.exports = rikz = async (rikz, m, chatUpdate, store) => {
 try {
 const body = (
@@ -81,6 +57,29 @@ const groupAdmins = participants.filter(v => v.admin).map(v => v.id);
 const isBotAdmins = groupAdmins.includes(botNumber);
 const isAdmins = groupAdmins.includes(m.sender);
 const groupName = groupMetadata.subject || "";
+    // In-memory storage for sessions and registry
+global.orderSessions = {};
+global.userRegistry = {}; // store registered users { jid: { name, role } }
+
+const gamesInfo = {
+    mlbb: { name: "Mobile Legends Malaysia", required: ["user_id", "server_id"] },
+    mlbbbrazil: { name: "Mobile Legends Brazil", required: ["user_id", "server_id"] },
+    mlbbgb: { name: "Mobile Legends Global", required: ["user_id", "server_id"] },
+    mlbbfrmy: { name: "MLBB First Recharge MY", required: ["user_id", "server_id"] },
+    mlbbfrid: { name: "MLBB First Recharge ID", required: ["user_id", "server_id"] },
+    mlbbflashmy: { name: "MLBB Malaysia FS", required: ["user_id", "server_id"] },
+    mlbbid: { name: "MLBB Indonesia", required: ["user_id", "server_id"] },
+    mlbbiditem: { name: "MLBB Indonesia Item", required: ["user_id", "server_id"] },
+    mlbbitem: { name: "MLBB Malaysia Item", required: ["user_id", "server_id"] },
+    mlbbgbitem: { name: "MLBB Global Item", required: ["user_id", "server_id"] },
+    ffsgmyitem: { name: "Free Fire SG/MY Item", required: ["user_id"] },
+    ffsgmy: { name: "Free Fire SG/MY", required: ["user_id"] },
+    mcggid: { name: "Magic Chess Go Go ID", required: ["user_id"] },
+    valomy: { name: "Valorant PC MY", required: ["user_id"] },
+    valoid: { name: "Valorant PC ID", required: ["user_id"] },
+    codmmy: { name: "CODM MY/SG", required: ["user_id"] },
+    dragonrise: { name: "Dragon Raja Rerise SEA", required: ["user_id"] },
+    pubg: { name: "PUBG Mobile", required: ["user_id"] }
 //======================
 if (m.message) {
 rikz.readMessages([m.key]);
