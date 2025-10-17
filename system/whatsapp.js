@@ -408,7 +408,7 @@ break;
     break;
 
     // ===== PRODUCT SELECTION / ORDER ===== //
-    default: {
+     {
         // handle .select-* buttons
         const matchSelect = command.match(/^\.select-(.+)$/);
         if (matchSelect) {
