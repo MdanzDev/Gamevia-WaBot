@@ -373,7 +373,7 @@ break;
 
 
 
-    // ===== REGISTER ===== //
+// ===== REGISTER ===== //
 case "register": {
     const pushname = m.pushName || "User";
     if (userRegistry[m.sender]) {
@@ -385,31 +385,31 @@ case "register": {
 }
 break;
 
-    // ===== PRICE MENU ===== //
-    case "price": {
-if (!userRegistry[m.sender]) {
-    await rikz.sendMessage(m.chat, { text: "Please register first using .register" }, { quoted: m });
-    return;
-}
-
-        }
-        const pushname = m.pushName || "User";
-        const buttons = Object.keys(gamesInfo).map(slug => ({
-            buttonId: `.select-${slug}`,
-            buttonText: { displayText: gamesInfo[slug].name },
-            type: 1
-        }));
-
-        const msg = {
-            text: `Hello ${pushname}\nSelect a game to view top-up prices:`,
-            footer: 'Powered by GameVia',
-            buttons,
-            headerType: 1
-        };
-
-        await rikz.sendMessage(m.chat, msg, { quoted: m });
+// ===== PRICE MENU ===== //
+case "price": {
+    if (!userRegistry[m.sender]) {
+        await rikz.sendMessage(m.chat, { text: "Please register first using .register" }, { quoted: m });
+        return;
     }
-    break;
+
+    const pushname = m.pushName || "User";
+    const buttons = Object.keys(gamesInfo).map(slug => ({
+        buttonId: `.select-${slug}`,
+        buttonText: { displayText: gamesInfo[slug].name },
+        type: 1
+    }));
+
+    const msg = {
+        text: `Hello ${pushname}\nSelect a game to view top-up prices:`,
+        footer: 'Powered by GameVia',
+        buttons,
+        headerType: 1
+    };
+
+    await rikz.sendMessage(m.chat, msg, { quoted: m });
+}
+break;
+
 
     // ===== PRODUCT SELECTION / ORDER ===== //
      {
