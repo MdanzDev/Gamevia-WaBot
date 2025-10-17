@@ -55,19 +55,6 @@ const API_KEY = "API-GVCDEAD0E38EA13632";
 const API_BASE_URL = "https://api.gamevia.shop/v1";
 
 
-// ==================== INITIALIZE ALL SYSTEMS ====================
-const sessionManager = new SessionManager();
-const cache = new SmartCache();
-const gameCategories = new GameCategoryManager();
-const marketing = new MarketingAutomation();
-const analytics = new AnalyticsSystem();
-const inventory = new InventoryManager();
-const orderTracker = new OrderTracker();
-const fraudPrevention = new FraudPrevention();
-const performanceMonitor = new PerformanceMonitor();
-const databaseMaintenance = new DatabaseMaintenance();
-const retrySystem = new SmartRetrySystem();
-
 
 
 // ==================== MAIN BOT HANDLER ====================
@@ -1178,6 +1165,19 @@ class SmartRetrySystem {
         }, 5 * 60 * 1000);
     }
 }
+
+        // ==================== INITIALIZE ALL SYSTEMS ====================
+const sessionManager = new SessionManager();
+const cache = new SmartCache();
+const gameCategories = new GameCategoryManager();
+const marketing = new MarketingAutomation();
+const analytics = new AnalyticsSystem();
+const inventory = new InventoryManager();
+const orderTracker = new OrderTracker();
+const fraudPrevention = new FraudPrevention();
+const performanceMonitor = new PerformanceMonitor();
+const databaseMaintenance = new DatabaseMaintenance();
+const retrySystem = new SmartRetrySystem();
 
 
         // =============== SWITCH COMMANDS ===============
