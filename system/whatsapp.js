@@ -346,6 +346,7 @@ case 'help': {
 break;
 
 //================ PRICE MENU =================//
+// PRICE MENU (button selection)
 case 'price': {
   try {
     const pushname = m.pushName || "User";
@@ -357,7 +358,7 @@ case 'price': {
       { buttonId: '.price-mlbb-my', buttonText: { displayText: 'MLBB Malaysia' }, type: 1 },
       { buttonId: '.price-codm', buttonText: { displayText: 'Call of Duty Mobile' }, type: 1 },
       { buttonId: '.price-genshin', buttonText: { displayText: 'Genshin Impact' }, type: 1 },
-      { buttonId: '.price-hok', buttonText: { displayText: 'Honor Of King' }, type: 1 }
+      { buttonId: '.price-hok', buttonText: { displayText: 'Honor of Kings' }, type: 1 } // NEW
     ];
 
     const msg = {
@@ -375,20 +376,30 @@ case 'price': {
 }
 break;
 
-//================ PRICE (slug) =================//
-
- case 'price-mlbb-global':   
+// PRICE (slug) -> Show all prices for a selected game
+case 'price-mlbb-global':
 case 'price-mlbb-brazil':
 case 'price-mlbb-my':
 case 'price-codm':
-case 'price-hok':   
-case 'price-genshin': {
+case 'price-genshin':
+case 'price-hok': { // NEW
   try {
     const apiKey = "API-GVCDEAD0E38EA13632"; // replace with your key
-    const slug = command.replace('.price-', '').trim();
 
-    // Send temporary "fetching" message
-    const loadingMsg = await rikz.sendMessage(m.chat, { text: `Fetching top-up prices for ${slug}... ⏳` }, { quoted: m });
+    const slugMap = {
+      'price-mlbb-global': 'mlbb',
+      'price-mlbb-brazil': 'mlbb-br',
+      'price-mlbb-my': 'mlbb-my',
+      'price-codm': 'codm',
+      'price-genshin': 'genshin',
+      'price-hok': 'hok' // NEW
+    };
+
+    const slug = slugMap[command];
+    if (!slug) {
+      await rikz.sendMessage(m.chat, { text: '❌ Invalid game selection.' }, { quoted: m });
+      return;
+    }
 
     const res = await fetch("https://api.gamevia.shop/v1/get_products.php", {
       method: "POST",
@@ -402,7 +413,7 @@ case 'price-genshin': {
     const data = await res.json();
 
     if (!data.success || !data.products || data.products.length === 0) {
-      await rikz.sendMessage(m.chat, { text: `No products found for ${slug}.` }, { quoted: m });
+      await rikz.sendMessage(m.chat, { text: `❌ No products found for ${slug}.` }, { quoted: m });
       return;
     }
 
@@ -411,19 +422,16 @@ case 'price-genshin': {
       text += `• ${p.name}\n  Code: ${p.srv_code}\n  Price: RM${p.price}\n  Stock: ${p.stock}\n\n`;
     }
 
-    // Send price list with image
     await rikz.sendMessage(m.chat, {
       image: { url: "https://files.catbox.moe/k1vd3r.jpg" },
       caption: text
     }, { quoted: m });
-
   } catch (err) {
     console.log(err);
-    await rikz.sendMessage(m.chat, { text: 'Failed to load product data.' }, { quoted: m });
+    await rikz.sendMessage(m.chat, { text: '❌ Failed to load product data.' }, { quoted: m });
   }
 }
 break;
-
 case "traxc": {
 let itsmenu = 
 `
