@@ -437,7 +437,7 @@ break;
     break;
 
     // ===== HANDLE LIST SELECTION ===== //
-    default: {
+    {
 
         // ===== GAME SELECTION ===== //
         const matchSelect = command.match(/^\.select-(.+)$/);
