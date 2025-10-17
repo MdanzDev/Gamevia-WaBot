@@ -57,6 +57,7 @@ module.exports = rikz = async (rikz, m, chatUpdate, store) => {
         let resellers = fs.existsSync(pathResellers) ? JSON.parse(fs.readFileSync(pathResellers)) : {};
         let orderSessions = {};
         let orders = {}; // orders per user { sender: [ {id, slug, srv_code, user_id, zone_id, price, status} ] }
+        let lastSelectedProduct = {}; // { sender: product_code }
 
         const gamesInfo = {
             mlbb: { name: "Mobile Legends Malaysia", required: ["user_id", "zone_id"] },
