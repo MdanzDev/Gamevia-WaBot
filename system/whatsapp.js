@@ -386,6 +386,23 @@ break;
 
 // ===== REGISTER ===== //
 
+  const API_KEY = "API-GVCDEAD0E38EA13632";
+
+// Store users and orders
+let userRegistry = {}; // optionally save/load from JSON
+let orderSessions = {};
+
+// Example games info
+const gamesInfo = {
+    mlbb: { name: "Mobile Legends Malaysia", required: ["user_id", "server_id"] },
+    mlbbbrazil: { name: "Mobile Legends Brazil", required: ["user_id", "server_id"] },
+    mlbbgb: { name: "Mobile Legends Global", required: ["user_id", "server_id"] },
+    codmmy: { name: "CODM MY/SG", required: ["user_id"] },
+    valomy: { name: "Valorant PC MY", required: ["user_id"] },
+    // add other games
+};
+
+
     // ===== REGISTER ===== //
     case "register": {
         const pushname = m.pushName || "User";
@@ -398,7 +415,7 @@ break;
     }
     break;
 
-    // ===== PRICE MENU (LIST) ===== //
+    // ===== PRICE MENU (BUTTONS) ===== //
     case "price": {
         if (!userRegistry[m.sender]) {
             await rikz.sendMessage(m.chat, { text: "Please register first using .register" }, { quoted: m });
@@ -406,38 +423,25 @@ break;
         }
 
         const pushname = m.pushName || "User";
-        const games = Object.keys(gamesInfo);
-        const half = Math.ceil(games.length / 2);
+        const buttons = Object.keys(gamesInfo).map(slug => ({
+            buttonId: `.select-${slug}`,
+            buttonText: { displayText: gamesInfo[slug].name },
+            type: 1
+        }));
 
-        const section1 = {
-            title: "Popular Games",
-            rows: games.slice(0, half).map(slug => ({
-                title: gamesInfo[slug].name,
-                rowId: `.select-${slug}`
-            }))
-        };
-        const section2 = {
-            title: "Other Games",
-            rows: games.slice(half).map(slug => ({
-                title: gamesInfo[slug].name,
-                rowId: `.select-${slug}`
-            }))
-        };
-
-        const listMsg = {
+        const msg = {
             text: `Hello ${pushname}\nSelect a game to view top-up prices:`,
             footer: "Powered by GameVia",
-            title: "GameVia Top-Up Menu",
-            buttonText: "Select Game",
-            sections: [section1, section2]
+            buttons,
+            headerType: 1
         };
 
-        await rikz.sendMessage(m.chat, listMsg, { quoted: m });
+        await rikz.sendMessage(m.chat, msg, { quoted: m });
     }
     break;
 
-    // ===== HANDLE LIST SELECTION ===== //
-    {
+    // ===== HANDLE BUTTON SELECTION ===== //
+     {
 
         // ===== GAME SELECTION ===== //
         const matchSelect = command.match(/^\.select-(.+)$/);
@@ -460,24 +464,21 @@ break;
                     return;
                 }
 
-                const productSection = [{
-                    title: `${gamesInfo[slug].name} Top-Up`,
-                    rows: data.products.map(p => ({
-                        title: `${p.name} - RM${p.price}`,
-                        rowId: `.order-${slug}-${p.srv_code}`,
-                        description: `Stock: ${p.stock}`
-                    }))
-                }];
+                // Create product buttons
+                const productButtons = data.products.map(p => ({
+                    buttonId: `.order-${slug}-${p.srv_code}`,
+                    buttonText: { displayText: `${p.name} - RM${p.price}` },
+                    type: 1
+                }));
 
-                const productList = {
-                    text: `Select a product to order:`,
-                    footer: "You can select any product",
-                    title: `${gamesInfo[slug].name} Prices`,
-                    buttonText: "Choose Product",
-                    sections: productSection
+                const productMsg = {
+                    text: `🎮 ${gamesInfo[slug].name} Top-Up Prices\nSelect a product to order:`,
+                    footer: 'You can select any product',
+                    buttons: productButtons,
+                    headerType: 1
                 };
 
-                await rikz.sendMessage(m.chat, productList, { quoted: m });
+                await rikz.sendMessage(m.chat, productMsg, { quoted: m });
 
             } catch (err) {
                 console.log(err);
@@ -576,6 +577,9 @@ break;
         }
     }
     break;
+
+// End of command switch
+
 
     // ===== TRAXC MENU ===== //
     case "traxc": {
