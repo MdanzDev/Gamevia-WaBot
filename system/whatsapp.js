@@ -79,8 +79,8 @@ module.exports = rikz = async (rikz, m, chatUpdate, store) => {
                     text: `Hello ${m.pushName || "User"}! Choose an option:`,
                     footer: 'Powered by GameVia',
                     buttons: [
-                        { buttonId: 'help', buttonText: { displayText: 'Help' }, type: 1 },
-                        { buttonId: 'price', buttonText: { displayText: 'Top-Up Prices' }, type: 1 }
+                        { buttonId: '.help', buttonText: { displayText: 'Help' }, type: 1 },
+                        { buttonId: '.price', buttonText: { displayText: 'Top-Up Prices' }, type: 1 }
                     ],
                     headerType: 1
                 }, { quoted: m });
@@ -90,7 +90,7 @@ module.exports = rikz = async (rikz, m, chatUpdate, store) => {
                 rikz.sendMessage(m.chat, {
                     text: "Commands:\n• menu\n• help\n• price\n• register\n• addreseller (owner)\n• addbalance (owner)\n• history (reseller)",
                     footer: 'Traxc Bot 4.0',
-                    buttons: [{ buttonId: 'menu', buttonText: { displayText: 'Main Menu' }, type: 1 }],
+                    buttons: [{ buttonId: '.menu', buttonText: { displayText: 'Main Menu' }, type: 1 }],
                     headerType: 1
                 }, { quoted: m });
             break;
@@ -99,7 +99,7 @@ module.exports = rikz = async (rikz, m, chatUpdate, store) => {
                 if(!userRegistry[m.sender]) return rikz.sendMessage(m.chat, { text: "Please register first using register" }, { quoted: m });
                 let buttons = [];
                 for(let slug in gamesInfo){
-                    buttons.push({ buttonId: `select-${slug}`, buttonText: { displayText: gamesInfo[slug].name }, type: 1 });
+                    buttons.push({ buttonId: `.select-${slug}`, buttonText: { displayText: gamesInfo[slug].name }, type: 1 });
                 }
                 rikz.sendMessage(m.chat, { text: "Select a game to view prices:", footer: "Powered by GameVia", buttons, headerType: 1 }, { quoted: m });
             break;
@@ -120,8 +120,8 @@ module.exports = rikz = async (rikz, m, chatUpdate, store) => {
                         if(!data.success || !data.products?.length) return rikz.sendMessage(m.chat, { text: "No products found." }, { quoted: m });
 
                         const productButtons = data.products.map(p => {
-                            const profitPrice = (p.price * 1.02).toFixed(2);
-                            return { buttonId: `order-${slug}-${p.srv_code}`, buttonText: { displayText: `${p.name} - RM${profitPrice}` }, type: 1 };
+                            const profitPrice = (p.vprice * 1.02).toFixed(2);
+                            return { buttonId: `.order-${slug}-${p.srv_code}`, buttonText: { displayText: `${p.name} - RM${profitPrice}` }, type: 1 };
                         });
 
                         rikz.sendMessage(m.chat, {
