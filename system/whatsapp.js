@@ -14,6 +14,42 @@ const chalk = require('chalk');
 const fetch = require('node-fetch');
 const path = require('path');
 
+// ==================== UTILITY FUNCTIONS - MOVE THESE TO TOP ====================
+const loadJSON = (path) => {
+    try {
+        return fs.existsSync(path) ? JSON.parse(fs.readFileSync(path)) : {};
+    } catch (error) {
+        console.error(`Error loading ${path}:`, error);
+        return {};
+    }
+};
+
+const saveJSON = (path, data) => {
+    try {
+        fs.ensureFileSync(path);
+        fs.writeFileSync(path, JSON.stringify(data, null, 2));
+    } catch (error) {
+        console.error(`Error saving ${path}:`, error);
+    }
+};
+
+const apiCall = async (endpoint, body = null) => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/${endpoint}`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "x-api-key": API_KEY
+            },
+            body: body ? JSON.stringify(body) : undefined
+        });
+        return await response.json();
+    } catch (error) {
+        return { success: false, message: "API connection failed" };
+    }
+};
+// ==================== END UTILITY FUNCTIONS ====================
+
 const API_KEY = "API-GVCDEAD0E38EA13632";
 const API_BASE_URL = "https://api.gamevia.shop/v1";
 
