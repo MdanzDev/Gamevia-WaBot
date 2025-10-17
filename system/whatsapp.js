@@ -18,6 +18,7 @@ const { getBuffer, getGroupAdmins, getSizeMedia, fetchJson, sleep, isUrl, runtim
 
 const API_KEY = "API-GVCDEAD0E38EA13632";
 
+
 module.exports = rikz = async (rikz, m, chatUpdate, store) => {
 try {
 const body = (
@@ -59,7 +60,8 @@ const isAdmins = groupAdmins.includes(m.sender);
 const groupName = groupMetadata.subject || "";
     // In-memory storage for sessions and registry
 global.orderSessions = {};
-global.userRegistry = {}; // store registered users { jid: { name, role } }
+
+const userRegistry = {}; // stores user info by sender ID
 
 const gamesInfo = {
     mlbb: { name: "Mobile Legends Malaysia", required: ["user_id", "server_id"] },
@@ -372,22 +374,24 @@ break;
 
 
     // ===== REGISTER ===== //
-    case "register": {
-        const pushname = m.pushName || "User";
-        if (userRegistry[m.sender]) {
-            await rikz.sendMessage(m.chat, { text: "You're already registered." }, { quoted: m });
-            break;
-        }
-        userRegistry[m.sender] = { name: pushname, role: "User" };
-        await rikz.sendMessage(m.chat, { text: `Registered successfully as ${pushname}` }, { quoted: m });
+case "register": {
+    const pushname = m.pushName || "User";
+    if (userRegistry[m.sender]) {
+        await rikz.sendMessage(m.chat, { text: "You're already registered." }, { quoted: m });
+        return;
     }
-    break;
+    userRegistry[m.sender] = { name: pushname, role: "User" };
+    await rikz.sendMessage(m.chat, { text: `Registered successfully as ${pushname}` }, { quoted: m });
+}
+break;
 
     // ===== PRICE MENU ===== //
     case "price": {
-        if (!userRegistry[m.sender]) {
-            await rikz.sendMessage(m.chat, { text: "Please register first using .register" }, { quoted: m });
-            break;
+if (!userRegistry[m.sender]) {
+    await rikz.sendMessage(m.chat, { text: "Please register first using .register" }, { quoted: m });
+    return;
+}
+
         }
         const pushname = m.pushName || "User";
         const buttons = Object.keys(gamesInfo).map(slug => ({
