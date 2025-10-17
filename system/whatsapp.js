@@ -1780,6 +1780,7 @@ Please confirm your order:`;
 
     } catch(err) {
         const duration = Date.now() - startTime;
+        const performanceMonitor = new PerformanceMonitor();
         performanceMonitor.trackError(err, 'main_handler');
         performanceMonitor.trackCommand('ERROR', duration);
         console.log('\x1b[1;31m' + err + '\x1b[0m');
