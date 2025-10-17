@@ -478,8 +478,8 @@ Please confirm your order:`;
         text: confirmationText,
         footer: "Check the information above before confirming",
         buttons: [
-            { buttonId: 'confirm', buttonText: { displayText: '✅ Confirm Order' }, type: 1 },
-            { buttonId: 'change', buttonText: { displayText: '✏️ Change Info' }, type: 1 }
+            { buttonId: '.confirm', buttonText: { displayText: '✅ Confirm Order' }, type: 1 },
+            { buttonId: '.change', buttonText: { displayText: '✏️ Change Info' }, type: 1 }
         ],
         headerType: 1
     }, { quoted: m });
