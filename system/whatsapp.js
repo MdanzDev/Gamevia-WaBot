@@ -352,18 +352,27 @@ global.sessions = global.sessions || {};
 // CASES
 // =======================
 
-// 1. User Registration
+// ==========================
+// REGISTER (example)
 case 'register': {
-  const pushname = m.pushName || "User";
-  if (global.registry[m.sender]) {
-    await rikz.sendMessage(m.chat, { text: `Hello ${pushname}, you are already registered.` }, { quoted: m });
-    return;
-  }
-  global.registry[m.sender] = { name: pushname, wallet: 0, orders: [] };
-  await rikz.sendMessage(m.chat, { text: `Hello ${pushname}, registration successful! Your wallet balance is RM0. Use .deposit to add credits.` }, { quoted: m });
+    try {
+        const sender = m?.sender || m?.key?.remoteJid || "unknown@user";
+        const pushname = m?.pushName || "User";
+
+        // Example: save to registry (in-memory or JSON)
+        global.registeredUsers = global.registeredUsers || {};
+        if (!global.registeredUsers[sender]) {
+            global.registeredUsers[sender] = { name: pushname, created_at: new Date() };
+            await rikz.sendMessage(m.chat, { text: `✅ ${pushname}, you are now registered.` }, { quoted: m });
+        } else {
+            await rikz.sendMessage(m.chat, { text: `ℹ️ ${pushname}, you are already registered.` }, { quoted: m });
+        }
+    } catch (err) {
+        console.log(err);
+        await rikz.sendMessage(m.chat, { text: 'Failed to register.' }, { quoted: m });
+    }
 }
 break;
-
 // 2. Deposit / Wallet Top-Up
 case 'deposit': {
   const amount = parseFloat(args[0]);
@@ -376,67 +385,93 @@ case 'deposit': {
 break;
 
 // 3. Price Menu
+// ==========================
+// PRICE MENU (button selection)
 case 'price': {
-  const pushname = m.pushName || "User";
-  const role = m.isOwner ? "Owner" : "User";
+    try {
+        const sender = m?.sender || m?.key?.remoteJid || "unknown@user";
+        const pushname = m?.pushName || "User";
+        const role = m?.isOwner ? "Owner" : "User";
 
-  const buttons = [
-    { buttonId: '.price mlbb', buttonText: { displayText: 'MLBB Malaysia' }, type: 1 },
-    { buttonId: '.price mlbbbrazil', buttonText: { displayText: 'MLBB Brazil' }, type: 1 },
-    { buttonId: '.price codmmy', buttonText: { displayText: 'CODM MY/SG' }, type: 1 },
-    { buttonId: '.price valomy', buttonText: { displayText: 'Valorant MY' }, type: 1 },
-    { buttonId: '.price holo', buttonText: { displayText: 'Honor of Kings' }, type: 1 },
-    { buttonId: '.price ffsgmy', buttonText: { displayText: 'Free Fire SG/MY' }, type: 1 }
-  ];
+        const buttons = [
+            { buttonId: '.price-mlbb', buttonText: { displayText: 'MLBB Malaysia' }, type: 1 },
+            { buttonId: '.price-mlbbbrazil', buttonText: { displayText: 'MLBB Brazil' }, type: 1 },
+            { buttonId: '.price-mlbbgb', buttonText: { displayText: 'MLBB Global' }, type: 1 },
+            { buttonId: '.price-mlbbfrmy', buttonText: { displayText: 'MLBB First Recharge MY' }, type: 1 },
+            { buttonId: '.price-mlbbfrid', buttonText: { displayText: 'MLBB First Recharge ID' }, type: 1 },
+            { buttonId: '.price-mlbbflashmy', buttonText: { displayText: 'MLBB Malaysia FS' }, type: 1 },
+            { buttonId: '.price-mlbbid', buttonText: { displayText: 'MLBB Indonesia' }, type: 1 },
+            { buttonId: '.price-mlbbiditem', buttonText: { displayText: 'MLBB Indonesia Item' }, type: 1 },
+            { buttonId: '.price-mlbbitem', buttonText: { displayText: 'MLBB Malaysia Item' }, type: 1 },
+            { buttonId: '.price-mlbbgbitem', buttonText: { displayText: 'MLBB Global Item' }, type: 1 },
+            { buttonId: '.price-ffsgmyitem', buttonText: { displayText: 'Free Fire SG/MY Item' }, type: 1 },
+            { buttonId: '.price-ffsgmy', buttonText: { displayText: 'Free Fire SG/MY' }, type: 1 },
+            { buttonId: '.price-mcggid', buttonText: { displayText: 'Magic Chess Go Go ID' }, type: 1 },
+            { buttonId: '.price-valomy', buttonText: { displayText: 'Valorant PC MY' }, type: 1 },
+            { buttonId: '.price-valoid', buttonText: { displayText: 'Valorant PC ID' }, type: 1 },
+            { buttonId: '.price-codmmy', buttonText: { displayText: 'CODM MY/SG' }, type: 1 },
+            { buttonId: '.price-dragonrise', buttonText: { displayText: 'Dragon Raja Rerise SEA' }, type: 1 },
+            { buttonId: '.price-pubg', buttonText: { displayText: 'PUBG Mobile' }, type: 1 }
+        ];
 
-  const msg = {
-    text: `Hello ${pushname} (${role})\nSelect a game to see top-up prices:`,
-    footer: 'Powered by GameVia',
-    buttons,
-    headerType: 4
-  };
+        const msg = {
+            text: `Hello ${pushname}\nRole: ${role}\n\nSelect a game below to check top-up prices.`,
+            footer: 'Powered by GameVia',
+            buttons,
+            headerType: 1
+        };
 
-  await rikz.sendMessage(m.chat, msg, { quoted: m });
+        await rikz.sendMessage(m.chat, msg, { quoted: m });
+    } catch (err) {
+        console.log(err);
+        await rikz.sendMessage(m.chat, { text: 'Error showing price menu.' }, { quoted: m });
+    }
 }
 break;
 
-// 4. Price List / Order Session Creation
-case 'price-mlbb':
-case 'price-mlbbbrazil':
-case 'price-codmmy':
-case 'price-valomy':
-case 'price-holo':
-case 'price-ffsgmy': {
-  if (!global.registry[m.sender]) return rikz.sendMessage(m.chat, { text: 'Please register first using .register' }, { quoted: m });
+// ==========================
+// PRICE (slug) -> Show all prices for a selected game
+case /^price-(.+)$/i.test(command) && command: {
+    try {
+        const sender = m?.sender || m?.key?.remoteJid || "unknown@user";
+        const pushname = m?.pushName || "User";
+        const slug = command.replace('price-', '').trim();
+        const apiKey = "API-GVCDEAD0E38EA13632";
 
-  const apiKey = "API-GVCDEAD0E38EA13632";
-  const slug = command.replace('.price-', '').trim();
+        const res = await fetch("https://api.gamevia.shop/v1/get_products.php", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "x-api-key": apiKey
+            },
+            body: JSON.stringify({ slug })
+        });
 
-  const res = await fetch("https://api.gamevia.shop/v1/get_products.php", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "x-api-key": apiKey },
-    body: JSON.stringify({ slug })
-  });
-  const data = await res.json();
+        const data = await res.json();
 
-  if (!data.success || !data.products || !data.products.length) return rikz.sendMessage(m.chat, { text: `No products found for ${slug}.` }, { quoted: m });
+        if (!data.success || !data.products || data.products.length === 0) {
+            await rikz.sendMessage(m.chat, { text: `No products found for ${slug}.` }, { quoted: m });
+            return;
+        }
 
-  const buttons = data.products.map(p => ({
-    buttonId: `.order ${slug} ${p.srv_code} ${p.price}`,
-    buttonText: { displayText: `${p.name} - RM${p.price}` },
-    type: 1
-  }));
+        let text = `🎮 ${data.game_name} Top-Up Prices\n\n`;
+        for (const p of data.products) {
+            text += `• ${p.name}\n  Code: ${p.srv_code}\n  Price: RM${p.price}\n  Stock: ${p.stock}\n\n`;
+        }
 
-  const msg = {
-    text: `🎮 ${data.game_name} Packages\nSelect a package to order:`,
-    footer: 'Powered by GameVia',
-    buttons,
-    headerType: 4
-  };
-
-  await rikz.sendMessage(m.chat, msg, { quoted: m });
+        await rikz.sendMessage(m.chat, {
+            image: { url: "https://files.catbox.moe/k1vd3r.jpg" },
+            caption: text
+        }, { quoted: m });
+    } catch (err) {
+        console.log(err);
+        await rikz.sendMessage(m.chat, { text: 'Failed to load product data.' }, { quoted: m });
+    }
 }
 break;
+
+
+
 
 // 5. Order Creation / Ask Game ID
 case 'order': {
