@@ -61,15 +61,6 @@ const groupName = groupMetadata.subject || "";
     // In-memory storage for sessions and registry
 global.orderSessions = {};
 
-const fs = require('fs');
-const path = './system/database/users.json';
-
-let userRegistry = {};
-if (fs.existsSync(path)) {
-    userRegistry = JSON.parse(fs.readFileSync(path));
-} else {
-    fs.writeFileSync(path, JSON.stringify({}));
-}
 
 
 const gamesInfo = {
@@ -91,6 +82,17 @@ const gamesInfo = {
     codmmy: { name: "CODM MY/SG", required: ["user_id"] },
     dragonrise: { name: "Dragon Raja Rerise SEA", required: ["user_id"] },
     pubg: { name: "PUBG Mobile", required: ["user_id"] }}
+
+    
+const path = './system/database/users.json';
+
+let userRegistry = {};
+if (fs.existsSync(path)) {
+    userRegistry = JSON.parse(fs.readFileSync(path));
+} else {
+    fs.writeFileSync(path, JSON.stringify({}));
+}
+
 //======================
 if (m.message) {
 rikz.readMessages([m.key]);
