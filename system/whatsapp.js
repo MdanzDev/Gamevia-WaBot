@@ -46,7 +46,7 @@ class SessionManager {
     getSession(userId) {
         const session = this.sessions.get(userId);
         if (session) {
-            session.lastActivity = Date.now(); // Update activity on access
+            session.lastActivity = Date.now();
         }
         return session;
     }
@@ -73,13 +73,12 @@ class SessionManager {
     }
 
     setupCleanupInterval() {
-        // Clean up expired sessions every 5 minutes
         setInterval(() => {
             const now = Date.now();
             let cleanedCount = 0;
             
             for (const [userId, session] of this.sessions) {
-                if (now - session.lastActivity > 15 * 60 * 1000) { // 15 minutes inactivity
+                if (now - session.lastActivity > 15 * 60 * 1000) {
                     this.clearSession(userId);
                     cleanedCount++;
                 }
@@ -88,7 +87,7 @@ class SessionManager {
             if (cleanedCount > 0) {
                 console.log(chalk.yellow(`Cleaned up ${cleanedCount} expired sessions`));
             }
-        }, 5 * 60 * 1000); // Check every 5 minutes
+        }, 5 * 60 * 1000);
     }
 
     getStats() {
@@ -103,43 +102,207 @@ class SessionManager {
 
 const sessionManager = new SessionManager();
 
-// ==================== MULTI-CURRENCY SUPPORT ====================
-const exchangeRates = {
-    MYR: 1.00,    // Base currency
-    USD: 0.21,     // 1 MYR = 0.21 USD
-    SGD: 0.29,     // 1 MYR = 0.29 SGD
-    IDR: 3325.50,  // 1 MYR = 3325.50 IDR
-    THB: 7.65,     // 1 MYR = 7.65 THB
-    PHP: 12.30,    // 1 MYR = 12.30 PHP
-    VND: 5250.00   // 1 MYR = 5250.00 VND
-};
-
-const currencySymbols = {
-    MYR: 'RM',
-    USD: '$',
-    SGD: 'S$',
-    IDR: 'Rp',
-    THB: '฿',
-    PHP: '₱',
-    VND: '₫'
-};
-
-const convertPrice = (priceMYR, currency) => {
-    const rate = exchangeRates[currency] || 1;
-    const converted = priceMYR * rate;
-    
-    // Format based on currency
-    if (['IDR', 'VND'].includes(currency)) {
-        return Math.round(converted).toLocaleString();
+// ==================== AUTOMATED MARKETING SYSTEM ====================
+class MarketingAutomation {
+    constructor() {
+        this.campaigns = new Map();
+        this.userSegments = new Map();
+        this.setupAutomatedCampaigns();
+        console.log(chalk.green('✓ Marketing Automation initialized'));
     }
-    return converted.toFixed(2);
-};
 
-const formatPrice = (priceMYR, currency) => {
-    const converted = convertPrice(priceMYR, currency);
-    const symbol = currencySymbols[currency] || '';
-    return `${symbol}${converted}`;
-};
+    setupAutomatedCampaigns() {
+        // Welcome campaign for new users
+        this.campaigns.set('welcome', {
+            trigger: 'user_registered',
+            delay: 2 * 60 * 1000, // 2 minutes after registration
+            message: `🎮 *Welcome to GameVia Bot!* 🎮
+
+Ready to top up your favorite games? 
+
+Here's how to get started:
+1. Use *.price* to see available games
+2. Select your game and product
+3. Provide your game ID & zone ID
+4. Confirm your order!
+
+Need help? Use *.help* anytime!`,
+            enabled: true
+        });
+
+        // Abandoned cart campaign
+        this.campaigns.set('abandoned_cart', {
+            trigger: 'order_abandoned', 
+            delay: 10 * 60 * 1000, // 10 minutes after abandonment
+            message: `🛒 *Complete Your Order!*
+
+Looks like you didn't finish your order! 
+
+Use *.history* to see pending orders or start over with *.price*
+
+Need help? We're here to assist! 🎯`,
+            enabled: true
+        });
+
+        // Inactive user re-engagement
+        this.campaigns.set('re_engagement', {
+            trigger: 'user_inactive_7d',
+            delay: 0,
+            message: `🎮 *We Miss You!* 🎮
+
+It's been a while! Ready for more gaming?
+
+Check out our latest products with *.price*
+
+Special treat: Fast processing & best rates! ⚡`,
+            enabled: true
+        });
+
+        // New game announcement
+        this.campaigns.set('new_game', {
+            trigger: 'new_game_added',
+            delay: 0,
+            message: `🎉 *NEW GAME AVAILABLE!* 🎉
+
+We've added new games to our platform! 
+
+Use *.price* to check them out and get your first top-up at special rates! 🚀`,
+            enabled: true
+        });
+    }
+
+    triggerCampaign(userId, campaignKey, customData = {}) {
+        const campaign = this.campaigns.get(campaignKey);
+        if (!campaign || !campaign.enabled) return;
+
+        console.log(chalk.blue(`📧 Triggering campaign ${campaignKey} for ${userId}`));
+
+        setTimeout(async () => {
+            try {
+                await rikz.sendMessage(userId, { text: campaign.message });
+                console.log(chalk.green(`✅ Campaign ${campaignKey} sent to ${userId}`));
+                
+                // Track campaign performance
+                this.trackCampaignDelivery(campaignKey, userId, true);
+            } catch (error) {
+                console.log(chalk.red(`❌ Failed to send campaign ${campaignKey} to ${userId}`));
+                this.trackCampaignDelivery(campaignKey, userId, false);
+            }
+        }, campaign.delay);
+    }
+
+    trackCampaignDelivery(campaignKey, userId, success) {
+        const campaignFile = './system/database/campaign_stats.json';
+        const stats = fs.existsSync(campaignFile) ? JSON.parse(fs.readFileSync(campaignFile)) : {};
+        
+        if (!stats[campaignKey]) {
+            stats[campaignKey] = { sent: 0, delivered: 0, failed: 0, users: [] };
+        }
+        
+        stats[campaignKey].sent++;
+        if (success) {
+            stats[campaignKey].delivered++;
+            if (!stats[campaignKey].users.includes(userId)) {
+                stats[campaignKey].users.push(userId);
+            }
+        } else {
+            stats[campaignKey].failed++;
+        }
+        
+        stats[campaignKey].lastSent = new Date().toISOString();
+        fs.writeFileSync(campaignFile, JSON.stringify(stats, null, 2));
+    }
+
+    // Segment users for targeted marketing
+    segmentUsers(userRegistry, orders) {
+        const segments = {
+            new_users: [],
+            active_buyers: [],
+            power_users: [],
+            inactive_users: []
+        };
+
+        const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+        for (const userId in userRegistry) {
+            const userOrders = orders[userId] || [];
+            const successfulOrders = userOrders.filter(o => o.status === 'success');
+            const lastOrder = successfulOrders.length > 0 ? 
+                new Date(successfulOrders[successfulOrders.length - 1].timestamp) : null;
+
+            if (successfulOrders.length >= 10) {
+                segments.power_users.push(userId);
+            } else if (successfulOrders.length >= 3) {
+                segments.active_buyers.push(userId);
+            } else if (successfulOrders.length === 0 && 
+                      new Date(userRegistry[userId].registeredAt) > oneWeekAgo) {
+                segments.new_users.push(userId);
+            } else if (lastOrder && lastOrder < oneWeekAgo) {
+                segments.inactive_users.push(userId);
+            }
+        }
+
+        this.userSegments = segments;
+        return segments;
+    }
+
+    // Schedule broadcast to specific segments
+    scheduleSegmentBroadcast(message, segments = ['all']) {
+        let targetUsers = new Set();
+
+        if (segments.includes('all')) {
+            targetUsers = new Set(Object.keys(userRegistry));
+        } else {
+            segments.forEach(segment => {
+                if (this.userSegments[segment]) {
+                    this.userSegments[segment].forEach(user => targetUsers.add(user));
+                }
+            });
+        }
+
+        return this.scheduleBroadcast(message, Array.from(targetUsers));
+    }
+
+    // Main broadcast function with rate limiting
+    scheduleBroadcast(message, targetUsers = null) {
+        const users = targetUsers || Object.keys(userRegistry);
+        let successCount = 0;
+        let failCount = 0;
+
+        console.log(chalk.blue(`📢 Starting broadcast to ${users.length} users`));
+
+        users.forEach(async (userId, index) => {
+            setTimeout(async () => {
+                try {
+                    await rikz.sendMessage(userId, { text: message });
+                    successCount++;
+                    
+                    // Log progress every 20 messages
+                    if ((successCount + failCount) % 20 === 0) {
+                        console.log(chalk.blue(`📊 Broadcast progress: ${successCount + failCount}/${users.length}`));
+                    }
+                } catch (error) {
+                    failCount++;
+                    console.log(chalk.red(`Failed to send to ${userId}`));
+                }
+            }, index * 500); // 500ms delay between messages
+        });
+
+        // Return stats after completion
+        setTimeout(() => {
+            console.log(chalk.green(`📊 Broadcast completed: ${successCount} sent, ${failCount} failed`));
+        }, users.length * 500 + 5000);
+
+        return { total: users.length, success: successCount, failed: failCount };
+    }
+
+    getCampaignStats() {
+        const campaignFile = './system/database/campaign_stats.json';
+        return fs.existsSync(campaignFile) ? JSON.parse(fs.readFileSync(campaignFile)) : {};
+    }
+}
+
+const marketing = new MarketingAutomation();
 
 // ==================== ANALYTICS SYSTEM ====================
 class AnalyticsSystem {
@@ -159,7 +322,6 @@ class AnalyticsSystem {
             }
         }
         
-        // Reset for new day
         return {
             date: today,
             commands: 0,
@@ -198,7 +360,6 @@ class AnalyticsSystem {
             this.dailyStats.failedOrders++;
         }
         
-        // Track popular games
         const game = order.gameSlug;
         this.dailyStats.popularGames[game] = (this.dailyStats.popularGames[game] || 0) + 1;
         
@@ -223,7 +384,6 @@ class AnalyticsSystem {
         const successfulOrders = allOrders.filter(o => o.status === 'success');
         const totalRevenue = successfulOrders.reduce((sum, o) => sum + (o.price || 0), 0);
         
-        // Calculate popular games
         const gameStats = {};
         allOrders.forEach(order => {
             gameStats[order.gameSlug] = (gameStats[order.gameSlug] || 0) + 1;
@@ -233,14 +393,11 @@ class AnalyticsSystem {
             .sort((a, b) => b[1] - a[1])
             .slice(0, 5);
         
-        // Calculate user growth
-        const userGrowth = Object.values(userRegistry).length;
-        
         return {
-            totalUsers: userGrowth,
+            totalUsers: Object.values(userRegistry).length,
             totalOrders: allOrders.length,
             successfulOrders: successfulOrders.length,
-            successRate: all.length > 0 ? (successfulOrders.length / allOrders.length * 100).toFixed(1) : 0,
+            successRate: allOrders.length > 0 ? (successfulOrders.length / allOrders.length * 100).toFixed(1) : 0,
             totalRevenue: totalRevenue,
             averageOrderValue: successfulOrders.length > 0 ? totalRevenue / successfulOrders.length : 0,
             popularGames: popularGames,
@@ -250,16 +407,15 @@ class AnalyticsSystem {
     }
 
     setupDailyReset() {
-        // Reset daily stats at midnight
         const now = new Date();
         const midnight = new Date(now);
         midnight.setHours(24, 0, 0, 0);
         
         setTimeout(() => {
-            this.dailyStats = this.loadDailyStats(); // This will create new day stats
+            this.dailyStats = this.loadDailyStats();
             setInterval(() => {
                 this.dailyStats = this.loadDailyStats();
-            }, 24 * 60 * 60 * 1000); // Daily
+            }, 24 * 60 * 60 * 1000);
         }, midnight - now);
     }
 }
@@ -341,7 +497,6 @@ module.exports = rikz = async (rikz, m, chatUpdate, store) => {
         let userRegistry = loadJSON('./system/database/users.json');
         let resellers = loadJSON('./system/database/resellers.json');
         let orders = loadJSON('./system/database/orders.json');
-        let gamesList = loadJSON('./system/database/games_cache.json');
 
         // Track command in analytics
         if (isCmd) {
@@ -355,69 +510,113 @@ module.exports = rikz = async (rikz, m, chatUpdate, store) => {
                 userRegistry[m.sender] = { 
                     name: m.pushName || "User", 
                     role: "User",
-                    registeredAt: new Date().toISOString(),
-                    currency: 'MYR' // Default currency
+                    registeredAt: new Date().toISOString()
                 };
                 saveJSON('./system/database/users.json', userRegistry);
                 analytics.trackNewUser();
+                
+                // Trigger welcome campaign
+                marketing.triggerCampaign(m.sender, 'welcome');
+                
                 rikz.sendMessage(m.chat, { text: `✅ Registered successfully as ${userRegistry[m.sender].name}` }, { quoted: m });
                 break;
 
             case 'menu':
-                const userCurrency = userRegistry[m.sender]?.currency || 'MYR';
                 rikz.sendMessage(m.chat, {
-                    text: `🎮 *GameVia Bot* • ${userCurrency}\n\nHello ${m.pushName || "User"}! Welcome to our top-up service.`,
-                    footer: 'Powered by GameVia API',
+                    text: `🎮 *GameVia Bot - Malaysia Region* 🇲🇾\n\nHello ${m.pushName || "User"}! Best prices for Malaysian gamers!`,
+                    footer: 'Specialized for Malaysian Region • Best Rates',
                     buttons: [
                         { buttonId: '.help', buttonText: { displayText: '📖 Help' }, type: 1 },
                         { buttonId: '.price', buttonText: { displayText: '💰 Prices' }, type: 1 },
-                        { buttonId: '.currency', buttonText: { displayText: '💱 Currency' }, type: 1 },
+                        { buttonId: '.promo', buttonText: { displayText: '🎉 Promotions' }, type: 1 },
                         { buttonId: '.stats', buttonText: { displayText: '📊 My Stats' }, type: 1 }
                     ],
                     headerType: 1
                 }, { quoted: m });
                 break;
 
-            // =============== MULTI-CURRENCY COMMANDS ===============
-            case 'currency':
-            case 'setcurrency':
-                const availableCurrencies = Object.keys(exchangeRates).join(', ');
-                if (args.length === 0) {
-                    const currentCurrency = userRegistry[m.sender]?.currency || 'MYR';
-                    return rikz.sendMessage(m.chat, { 
-                        text: `💱 *Currency Settings*\n\nCurrent: ${currentCurrency}\nAvailable: ${availableCurrencies}\n\nUsage: .currency USD` 
-                    }, { quoted: m });
-                }
-                
-                const newCurrency = args[0].toUpperCase();
-                if (!exchangeRates[newCurrency]) {
-                    return rikz.sendMessage(m.chat, { 
-                        text: `❌ Invalid currency. Available: ${availableCurrencies}` 
-                    }, { quoted: m });
-                }
-                
-                if (!userRegistry[m.sender]) {
-                    userRegistry[m.sender] = { name: m.pushName || "User", role: "User" };
-                }
-                
-                userRegistry[m.sender].currency = newCurrency;
-                saveJSON('./system/database/users.json', userRegistry);
-                
-                rikz.sendMessage(m.chat, { 
-                    text: `✅ Currency set to ${newCurrency} ${currencySymbols[newCurrency]}\n\nAll prices will now be shown in ${newCurrency}.` 
-                }, { quoted: m });
+            // =============== MARKETING & PROMOTION COMMANDS ===============
+            case 'promo':
+            case 'promotions':
+                const promoText = `🎊 *Current Promotions* 🎊
+
+🔥 *Hot Deals for Malaysian Gamers:*
+• First-time users: Extra fast processing ⚡
+• Bulk orders: Special rates available
+• Regular promotions: Watch this space!
+
+💎 *Why choose us?*
+✅ Best rates for Malaysia region
+✅ Instant processing 
+✅ 24/7 customer support
+✅ Secure & reliable
+
+Use *.price* to see all available games and start ordering!`;
+
+                rikz.sendMessage(m.chat, { text: promoText }, { quoted: m });
                 break;
 
-            case 'rates':
-                const ratesText = Object.entries(exchangeRates)
-                    .map(([curr, rate]) => 
-                        `• 1 MYR = ${curr === 'MYR' ? '1.00 MYR' : `${convertPrice(1, curr)} ${curr}`}`
-                    )
-                    .join('\n');
+            case 'broadcast':
+                if (!isCreator) break;
                 
-                rikz.sendMessage(m.chat, { 
-                    text: `💱 *Exchange Rates*\n\n${ratesText}\n\nBase currency: MYR` 
-                }, { quoted: m });
+                const broadcastMessage = text;
+                if (!broadcastMessage) return rikz.sendMessage(m.chat, { text: "Usage: .broadcast <message>" }, { quoted: m });
+                
+                rikz.sendMessage(m.chat, { text: "📢 Starting broadcast to all users..." }, { quoted: m });
+                
+                const result = marketing.scheduleBroadcast(`📢 *Announcement*\n\n${broadcastMessage}`);
+                
+                setTimeout(() => {
+                    rikz.sendMessage(m.chat, { 
+                        text: `📊 Broadcast Completed:\nTotal: ${result.total}\nSent: ${result.success}\nFailed: ${result.failed}` 
+                    }, { quoted: m });
+                }, 5000);
+                break;
+
+            case 'segmentbroadcast':
+                if (!isCreator) break;
+                
+                const [segment, ...messageParts] = args;
+                const segmentMessage = messageParts.join(' ');
+                
+                if (!segment || !segmentMessage) {
+                    return rikz.sendMessage(m.chat, { 
+                        text: "Usage: .segmentbroadcast <segment> <message>\n\nSegments: new_users, active_buyers, power_users, inactive_users, all" 
+                    }, { quoted: m });
+                }
+
+                // Update user segments
+                marketing.segmentUsers(userRegistry, orders);
+                
+                rikz.sendMessage(m.chat, { text: `📢 Starting segment broadcast to ${segment}...` }, { quoted: m });
+                
+                const segmentResult = marketing.scheduleSegmentBroadcast(
+                    `🎯 *Special Offer*\n\n${segmentMessage}`, 
+                    [segment]
+                );
+                
+                setTimeout(() => {
+                    rikz.sendMessage(m.chat, { 
+                        text: `📊 Segment Broadcast Completed:\nSegment: ${segment}\nTotal: ${segmentResult.total}\nSent: ${segmentResult.success}\nFailed: ${segmentResult.failed}` 
+                    }, { quoted: m });
+                }, 5000);
+                break;
+
+            case 'campaignstats':
+                if (!isCreator) break;
+                
+                const campaignStats = marketing.getCampaignStats();
+                let statsText = "📈 *Campaign Statistics*\n\n";
+                
+                for (const [campaign, data] of Object.entries(campaignStats)) {
+                    const deliveryRate = data.sent > 0 ? ((data.delivered / data.sent) * 100).toFixed(1) : 0;
+                    statsText += `*${campaign}:*\n` +
+                                `Sent: ${data.sent} | Delivered: ${data.delivered} | Failed: ${data.failed}\n` +
+                                `Success Rate: ${deliveryRate}% | Unique Users: ${data.users?.length || 0}\n` +
+                                `Last Sent: ${data.lastSent ? new Date(data.lastSent).toLocaleDateString() : 'Never'}\n\n`;
+                }
+                
+                rikz.sendMessage(m.chat, { text: statsText }, { quoted: m });
                 break;
 
             // =============== ANALYTICS COMMANDS ===============
@@ -427,16 +626,15 @@ module.exports = rikz = async (rikz, m, chatUpdate, store) => {
                 const userOrders = orders[m.sender] || [];
                 const successfulUserOrders = userOrders.filter(o => o.status === 'success');
                 const totalSpent = successfulUserOrders.reduce((sum, o) => sum + (o.price || 0), 0);
-                const userCurrencyStat = userRegistry[m.sender]?.currency || 'MYR';
                 
-                const statsText = `📊 *Your Statistics*\n
+                const statsTextUser = `📊 *Your Statistics*\n
 🛒 Total Orders: ${userOrders.length}
 ✅ Successful: ${successfulUserOrders.length}
-💰 Total Spent: ${formatPrice(totalSpent, userCurrencyStat)}
+💰 Total Spent: RM${totalSpent.toFixed(2)}
 🎯 Success Rate: ${userOrders.length > 0 ? ((successfulUserOrders.length / userOrders.length) * 100).toFixed(1) : 0}%
-💱 Currency: ${userCurrencyStat}`;
+📍 Region: Malaysia 🇲🇾`;
 
-                rikz.sendMessage(m.chat, { text: statsText }, { quoted: m });
+                rikz.sendMessage(m.chat, { text: statsTextUser }, { quoted: m });
                 break;
 
             case 'analytics':
@@ -445,11 +643,13 @@ module.exports = rikz = async (rikz, m, chatUpdate, store) => {
                 const comprehensiveStats = analytics.getComprehensiveAnalytics();
                 const dailyStats = analytics.getDailyAnalytics();
                 
-                const analyticsText = `📈 *Advanced Analytics*\n
+                // Update user segments for marketing
+                const segments = marketing.segmentUsers(userRegistry, orders);
+                
+                const analyticsText = `📈 *Business Analytics*\n
 📅 *Today's Stats:*
 • Commands: ${dailyStats.commands}
 • Orders: ${dailyStats.orders}
-• Success Rate: ${dailyStats.orders > 0 ? ((dailyStats.successfulOrders / dailyStats.orders) * 100).toFixed(1) : 0}%
 • Revenue: RM${dailyStats.revenue.toFixed(2)}
 • New Users: ${dailyStats.newUsers}
 
@@ -458,11 +658,12 @@ module.exports = rikz = async (rikz, m, chatUpdate, store) => {
 • Total Orders: ${comprehensiveStats.totalOrders}
 • Success Rate: ${comprehensiveStats.successRate}%
 • Total Revenue: RM${comprehensiveStats.totalRevenue.toFixed(2)}
-• Avg Order: RM${comprehensiveStats.averageOrderValue.toFixed(2)}
 
-🕒 *Session Stats:*
-• Active Sessions: ${comprehensiveStats.sessionStats.activeSessions}
-• Total Sessions: ${comprehensiveStats.sessionStats.totalSessions}
+👥 *User Segments:*
+• New Users: ${segments.new_users.length}
+• Active Buyers: ${segments.active_buyers.length} 
+• Power Users: ${segments.power_users.length}
+• Inactive Users: ${segments.inactive_users.length}
 
 🎮 *Top Games:*
 ${comprehensiveStats.popularGames.map(([game, count]) => `• ${game}: ${count} orders`).join('\n')}`;
@@ -470,58 +671,64 @@ ${comprehensiveStats.popularGames.map(([game, count]) => `• ${game}: ${count} 
                 rikz.sendMessage(m.chat, { text: analyticsText }, { quoted: m });
                 break;
 
-            case 'dailystats':
-                if (!isCreator) break;
-                
-                const dailyStatsData = analytics.getDailyAnalytics();
-                const peakHour = Object.entries(dailyStatsData.peakHours)
-                    .sort((a, b) => b[1] - a[1])[0];
-                
-                const dailyText = `📊 *Daily Statistics - ${dailyStatsData.date}*\n
-📞 Commands: ${dailyStatsData.commands}
-🛒 Orders: ${dailyStatsData.orders}
-✅ Successful: ${dailyStatsData.successfulOrders}
-❌ Failed: ${dailyStatsData.failedOrders}
-💰 Revenue: RM${dailyStatsData.revenue.toFixed(2)}
-👥 New Users: ${dailyStatsData.newUsers}
-🏆 Peak Hour: ${peakHour ? `Hour ${peakHour[0]}:00 (${peakHour[1]} commands)` : 'No data'}
-
-🎮 Popular Games:
-${Object.entries(dailyStatsData.popularGames)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 3)
-    .map(([game, count]) => `• ${game}: ${count} orders`)
-    .join('\n')}`;
-
-                rikz.sendMessage(m.chat, { text: dailyText }, { quoted: m });
-                break;
-
-            // ... (your existing commands like price, help, etc.)
-
+            // ... (your existing commands like price, help, addreseller, etc.)
             case 'price':
                 if(!userRegistry[m.sender]) return rikz.sendMessage(m.chat, { text: "Please register first using .register" }, { quoted: m });
                 
-                // Show available games for selection
                 const gameButtons = [
                     { buttonId: '.select-mlbb', buttonText: { displayText: 'Mobile Legends' }, type: 1 },
-                    { buttonId: '.select-ff', buttonText: { displayText: 'Free Fire' }, type: 1 },
+                    { buttonId: '.select-ffsg', buttonText: { displayText: 'Free Fire' }, type: 1 },
                     { buttonId: '.select-pubg', buttonText: { displayText: 'PUBG Mobile' }, type: 1 },
                     { buttonId: '.select-cod', buttonText: { displayText: 'Call of Duty' }, type: 1 }
                 ];
 
-                const userCurrencyPrice = userRegistry[m.sender]?.currency || 'MYR';
                 rikz.sendMessage(m.chat, {
-                    text: `💰 *Game Prices • ${userCurrencyPrice}*\n\nSelect a game to view products:`,
-                    footer: "Prices include 2% service fee",
+                    text: `💰 *Game Prices - Malaysia Region* 🇲🇾\n\nBest rates for Malaysian gamers! Select a game:`,
+                    footer: "Specialized pricing for Malaysia • Includes 2% service fee",
                     buttons: gameButtons,
                     headerType: 1
                 }, { quoted: m });
                 break;
 
-            // ... (other existing commands)
+            case 'help':
+                const helpText = `🎮 *GameVia Bot Commands* 🇲🇾
+
+*Basic Commands:*
+• .menu - Main menu
+• .help - Show this help  
+• .register - Register your account
+• .price - View game prices
+• .promo - Current promotions
+
+*Order Commands:*
+• .id <user_id> <zone_id> <product_code> - Quick order
+• .history - View order history
+• .stats - Your statistics
+
+*Marketing Commands (Admin):*
+• .broadcast <message> - Broadcast to all users
+• .segmentbroadcast <segment> <message> - Targeted broadcast
+• .campaignstats - Campaign performance
+• .analytics - Business analytics
+
+*Why Choose Us?*
+✅ Best rates for Malaysia region
+✅ Fast & secure processing
+✅ 24/7 reliable service
+✅ Specialized for Malaysian gamers`;
+
+                rikz.sendMessage(m.chat, {
+                    text: helpText,
+                    footer: 'GameVia Bot • Specialized for Malaysia',
+                    buttons: [{ buttonId: '.menu', buttonText: { displayText: '🏠 Main Menu' }, type: 1 }],
+                    headerType: 1
+                }, { quoted: m });
+                break;
+
+            // ... (other existing commands like addreseller, addbalance, history)
         }
 
-        // =============== DYNAMIC COMMANDS WITH SESSION MANAGEMENT ===============
+        // =============== DYNAMIC COMMANDS ===============
         if(command.startsWith('select-')) {
             const slug = command.replace('select-', '');
             
@@ -529,27 +736,18 @@ ${Object.entries(dailyStatsData.popularGames)
                 const data = await apiCall('get_products.php', { slug });
                 if(!data.success || !data.products?.length) return rikz.sendMessage(m.chat, { text: "No products available for this game." }, { quoted: m });
 
-                const userCurrency = userRegistry[m.sender]?.currency || 'MYR';
                 const productButtons = data.products.map(product => {
-                    const profitPrice = (product.vprice * 1.02); // 2% profit
-                    const displayPrice = formatPrice(profitPrice, userCurrency);
+                    const profitPrice = (product.vprice * 1.02).toFixed(2); // 2% profit
                     return {
                         buttonId: `.order-${slug}-${product.srv_code}`,
-                        buttonText: { displayText: `${product.name} - ${displayPrice}` },
+                        buttonText: { displayText: `${product.name} - RM${profitPrice}` },
                         type: 1
                     };
                 });
 
-                // Add currency change button
-                productButtons.push({
-                    buttonId: '.currency',
-                    buttonText: { displayText: `💱 Change Currency` },
-                    type: 1
-                });
-
                 rikz.sendMessage(m.chat, {
-                    text: `🎮 *${data.game_name} Products • ${userCurrency}*\n*Prices include 2% service fee*`,
-                    footer: `Currency: ${userCurrency}`,
+                    text: `🎮 *${data.game_name} - Malaysia Prices* 🇲🇾\n*Best rates with 2% service fee included*`,
+                    footer: "Specialized pricing for Malaysian region",
                     buttons: productButtons,
                     headerType: 1
                 }, { quoted: m });
@@ -563,17 +761,15 @@ ${Object.entries(dailyStatsData.popularGames)
         else if(command.startsWith('order-')) {
             const [_, slug, srvCode] = command.split('-');
             
-            // Create session with timeout
             sessionManager.createSession(m.sender, {
                 step: "awaiting_ids",
                 gameSlug: slug,
-                productCode: srvCode,
-                userCurrency: userRegistry[m.sender]?.currency || 'MYR'
+                productCode: srvCode
             });
             
-            const gameName = "Mobile Legends"; // You can map this from your games list
+            const gameName = "Mobile Legends Malaysia"; // Dynamic based on slug
             rikz.sendMessage(m.chat, { 
-                text: `📝 *Order Setup for ${gameName}*\n\nPlease provide your:\n*USER_ID* and *ZONE_ID*\n\nFormat: user_id zone_id\nExample: 12345 1` 
+                text: `📝 *Order Setup for ${gameName}* 🇲🇾\n\nPlease provide your:\n*USER_ID* and *ZONE_ID*\n\nFormat: user_id zone_id\nExample: 12345 1` 
             }, { quoted: m });
         }
 
@@ -591,7 +787,6 @@ ${Object.entries(dailyStatsData.popularGames)
                 const result = await apiCall('order.php', orderData);
 
                 if(result.success) {
-                    // Save order
                     if(!orders[m.sender]) orders[m.sender] = [];
                     const orderDetails = {
                         id: result.custom_order_id,
@@ -601,27 +796,23 @@ ${Object.entries(dailyStatsData.popularGames)
                         price: result.amount,
                         status: result.status,
                         timestamp: new Date().toISOString(),
-                        description: result.description,
-                        currency: session.userCurrency
+                        description: result.description
                     };
                     
                     orders[m.sender].push(orderDetails);
                     saveJSON('./system/database/orders.json', orders);
                     
-                    // Track in analytics
                     analytics.trackOrder(orderDetails, result.status);
 
-                    const userCurrency = session.userCurrency;
-                    const successText = `🎉 *Order Successful!*\n
+                    const successText = `🎉 *Order Successful!* 🇲🇾\n
 📦 *Order ID:* ${result.custom_order_id}
 🎮 *Game:* ${session.gameSlug}
 💎 *Product:* ${session.productCode}
 👤 *USER_ID:* ${session.orderData.user_id}
 📍 *ZONE_ID:* ${session.orderData.zone_id}
-💰 *Amount:* ${formatPrice(result.amount, userCurrency)}
-📊 *Status:* ${result.status}
-💱 *Currency:* ${userCurrency}\n
-Thank you for your order!`;
+💰 *Amount:* RM${result.amount}
+📊 *Status:* ${result.status}\n
+*Thank you for choosing GameVia Malaysia!* 🎮`;
 
                     rikz.sendMessage(m.chat, { text: successText }, { quoted: m });
                 } else {
@@ -629,7 +820,6 @@ Thank you for your order!`;
                         text: `❌ *Order Failed*\n\nReason: ${result.message || "Unknown error"}` 
                     }, { quoted: m });
                     
-                    // Track failed order in analytics
                     analytics.trackOrder({
                         gameSlug: session.gameSlug,
                         product: session.productCode,
@@ -642,14 +832,12 @@ Thank you for your order!`;
                 }, { quoted: m });
             }
 
-            // Clear session after order completion
             sessionManager.clearSession(m.sender);
         }
 
         else if(sessionManager.getSession(m.sender)?.step === 'awaiting_ids') {
             const session = sessionManager.getSession(m.sender);
             
-            // Parse the input
             const inputParts = body.trim().split(/ +/);
             
             if(inputParts.length < 2) {
@@ -661,50 +849,39 @@ Thank you for your order!`;
             const userId = inputParts[0];
             const zoneId = inputParts[1];
             
-            // Update session
             sessionManager.updateSession(m.sender, {
                 step: "awaiting_confirmation",
                 orderData: { user_id: userId, zone_id: zoneId }
             });
 
-            // Get product price for confirmation display
+            // Get product price
             const productData = await apiCall('get_products.php', { slug: session.gameSlug });
             const product = productData.products?.find(p => p.srv_code === session.productCode);
-            const price = product ? (product.price * 1.02) : 0;
-            const displayPrice = formatPrice(price, session.userCurrency);
+            const price = product ? (product.vprice * 1.02).toFixed(2) : "0.00";
 
-            const confirmationText = `✅ *Order Information Received • ${session.userCurrency}*\n
+            const confirmationText = `✅ *Order Information Received* 🇲🇾\n
 🎮 *Game:* ${session.gameSlug}
 📦 *Product:* ${session.productCode}
 👤 *USER_ID:* ${userId}
 📍 *ZONE_ID:* ${zoneId}
-💰 *Amount:* ${displayPrice}\n
+💰 *Amount:* RM${price}\n
 Please confirm your order:`;
 
             await rikz.sendMessage(m.chat, {
                 text: confirmationText,
-                footer: "Check the information above before confirming",
+                footer: "Best rates for Malaysia • Secure & Fast",
                 buttons: [
                     { buttonId: '.confirm', buttonText: { displayText: '✅ Confirm Order' }, type: 1 },
                     { buttonId: '.change', buttonText: { displayText: '✏️ Change Info' }, type: 1 }
                 ],
                 headerType: 1
-            }, { quoted: m });
+            }, { quoted: m ]);
         }
 
-        else if(command === 'sessioninfo') {
-            // Debug command to check session status
-            const session = sessionManager.getSession(m.sender);
-            if (session) {
-                const sessionAge = Math.round((Date.now() - session.createdAt) / 1000);
-                const lastActivity = Math.round((Date.now() - session.lastActivity) / 1000);
-                
-                rikz.sendMessage(m.chat, { 
-                    text: `🔍 *Session Info*\n\nStep: ${session.step}\nGame: ${session.gameSlug}\nProduct: ${session.productCode}\nAge: ${sessionAge}s\nLast Activity: ${lastActivity}s ago\nCurrency: ${session.userCurrency}` 
-                }, { quoted: m });
-            } else {
-                rikz.sendMessage(m.chat, { text: "No active session." }, { quoted: m });
-            }
+        // Track abandoned carts for marketing
+        if (sessionManager.getSession(m.sender) && body.toLowerCase().includes('cancel')) {
+            marketing.triggerCampaign(m.sender, 'abandoned_cart');
+            sessionManager.clearSession(m.sender);
         }
 
     } catch(err) {
