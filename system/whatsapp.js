@@ -97,7 +97,7 @@ console.log('DEBUG: body:', body);
                 rikz.sendMessage(m.chat, { text: `Registered successfully as ${userRegistry[m.sender].name}` }, { quoted: m });
             break;
 
-                case 'id': 
+                case command == 'id': 
     if(args.length < 2) return rikz.sendMessage(m.chat, { text: "Usage: .id <USER_ID> <ZONE_ID>" }, { quoted: m });
     const sessionSlug = args[2] || "mlbb"; // default game if needed
     const sessionProduct = args[3] || lastSelectedProduct[m.sender]; // track last product if you want
