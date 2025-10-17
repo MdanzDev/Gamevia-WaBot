@@ -343,49 +343,91 @@ break;
 //=========================
 // PRICE MENU (BUTTON SELECTION)
 //=========================
+// ===== PRICE MENU BUTTON SELECTION =====
 case 'price': {
-  const pushname = m.pushName || "User";
-  const role = m.isOwner ? "Owner" : "User";
+  try {
+    const pushname = m.pushName || "User";
+    const role = m.isOwner ? "Owner" : "User";
 
-  const buttons = [
-    { buttonId: '.price-mlbb-global', buttonText: { displayText: 'MLBB Global' }, type: 1 },
-    { buttonId: '.price-mlbb-brazil', buttonText: { displayText: 'MLBB Brazil' }, type: 1 },
-    { buttonId: '.price-mlbb-my', buttonText: { displayText: 'MLBB MY' }, type: 1 },
-    { buttonId: '.price-codm', buttonText: { displayText: 'CODM' }, type: 1 },
-    { buttonId: '.price-hok', buttonText: { displayText: 'Honor of Kings' }, type: 1 },
-    { buttonId: '.price-genshin', buttonText: { displayText: 'Genshin Impact' }, type: 1 }
-  ];
+    const buttons = [
+      { buttonId: '.price-mlbb', buttonText: { displayText: 'MLBB Malaysia' }, type: 1 },
+      { buttonId: '.price-mlbbbrazil', buttonText: { displayText: 'MLBB Brazil' }, type: 1 },
+      { buttonId: '.price-mlbbgb', buttonText: { displayText: 'MLBB Global' }, type: 1 },
+      { buttonId: '.price-mlbbfrmy', buttonText: { displayText: 'MLBB First Recharge MY' }, type: 1 },
+      { buttonId: '.price-mlbbfrid', buttonText: { displayText: 'MLBB First Recharge ID' }, type: 1 },
+      { buttonId: '.price-mlbbflashmy', buttonText: { displayText: 'MLBB Malaysia FS' }, type: 1 },
+      { buttonId: '.price-mlbbid', buttonText: { displayText: 'MLBB Indonesia' }, type: 1 },
+      { buttonId: '.price-mlbbiditem', buttonText: { displayText: 'MLBB Indonesia Item' }, type: 1 },
+      { buttonId: '.price-mlbbitem', buttonText: { displayText: 'MLBB Malaysia Item' }, type: 1 },
+      { buttonId: '.price-mlbbgbitem', buttonText: { displayText: 'MLBB Global Item' }, type: 1 },
+      { buttonId: '.price-ffsgmyitem', buttonText: { displayText: 'Free Fire SG/MY Item' }, type: 1 },
+      { buttonId: '.price-ffsgmy', buttonText: { displayText: 'Free Fire SG/MY' }, type: 1 },
+      { buttonId: '.price-mcggid', buttonText: { displayText: 'Magic Chess Go Go ID' }, type: 1 },
+      { buttonId: '.price-valomy', buttonText: { displayText: 'Valorant PC MY' }, type: 1 },
+      { buttonId: '.price-valoid', buttonText: { displayText: 'Valorant PC ID' }, type: 1 },
+      { buttonId: '.price-codmmy', buttonText: { displayText: 'CODM MY/SG' }, type: 1 },
+      { buttonId: '.price-dragonrise', buttonText: { displayText: 'Dragon Raja Rerise SEA' }, type: 1 },
+      { buttonId: '.price-pubg', buttonText: { displayText: 'PUBG Mobile' }, type: 1 }
+    ];
 
-  const msg = {
-    text: `Hello ${pushname}\nRole: ${role}\n\nSelect a game below to check top-up prices.`,
-    footer: 'Powered by GameVia',
-    buttons,
-    headerType: 1
-  };
+    const msg = {
+      text: `Hello ${pushname}\nRole: ${role}\n\nSelect a game below to view top-up prices:`,
+      footer: 'Powered by GameVia',
+      buttons,
+      headerType: 4
+    };
 
-  await rikz.sendMessage(m.chat, msg, { quoted: m });
+    await rikz.sendMessage(m.chat, msg, { quoted: m });
+  } catch (err) {
+    console.log(err);
+    await rikz.sendMessage(m.chat, { text: 'Error showing price menu.' }, { quoted: m });
+  }
 }
 break;
 
-//=========================
-// PRICE (SLUGGED) -> Show all prices for a selected game
-//=========================
-case 'price-mlbb-global':
-case 'price-mlbb-brazil':
-case 'price-mlbb-my':
-case 'price-codm':
-case 'price-hok':
-case 'price-genshin': {
+// ===== PRICE (SLUG) SELECTION =====
+case 'price-mlbb':
+case 'price-mlbbbrazil':
+case 'price-mlbbgb':
+case 'price-mlbbfrmy':
+case 'price-mlbbfrid':
+case 'price-mlbbflashmy':
+case 'price-mlbbid':
+case 'price-mlbbiditem':
+case 'price-mlbbitem':
+case 'price-mlbbgbitem':
+case 'price-ffsgmyitem':
+case 'price-ffsgmy':
+case 'price-mcggid':
+case 'price-valomy':
+case 'price-valoid':
+case 'price-codmmy':
+case 'price-dragonrise':
+case 'price-pubg': {
   try {
-    const apiKey = "API-GVCDEAD0E38EA13632"; // replace with your API key
+    const apiKey = "API-GVCDEAD0E38EA13632";
+
     const slugMap = {
-      'price-mlbb-global': 'mlbb-global',
-      'price-mlbb-brazil': 'mlbb-brazil',
-      'price-mlbb-my': 'mlbb-my',
-      'price-codm': 'codm',
-      'price-hok': 'hok',
-      'price-genshin': 'genshin'
+      'price-mlbb': 'mlbb',
+      'price-mlbbbrazil': 'mlbbbrazil',
+      'price-mlbbgb': 'mlbbgb',
+      'price-mlbbfrmy': 'mlbbfrmy',
+      'price-mlbbfrid': 'mlbbfrid',
+      'price-mlbbflashmy': 'mlbbflashmy',
+      'price-mlbbid': 'mlbbid',
+      'price-mlbbiditem': 'mlbbiditem',
+      'price-mlbbitem': 'mlbbitem',
+      'price-mlbbgbitem': 'mlbbgbitem',
+      'price-ffsgmyitem': 'ffsgmyitem',
+      'price-ffsgmy': 'ffsgmy',
+      'price-mcggid': 'mcggid',
+      'price-valomy': 'valomy',
+      'price-valoid': 'valoid',
+      'price-codmmy': 'codmmy',
+      'price-dragonrise': 'dragonrise',
+      'price-pubg': 'pubg'
     };
+
     const slug = slugMap[command];
 
     const res = await fetch("https://api.gamevia.shop/v1/get_products.php", {
@@ -405,9 +447,9 @@ case 'price-genshin': {
     }
 
     let text = `🎮 ${data.game_name} Top-Up Prices\n\n`;
-    for (const p of data.products) {
+    data.products.forEach(p => {
       text += `• ${p.name}\n  Code: ${p.srv_code}\n  Price: RM${p.price}\n  Stock: ${p.stock}\n\n`;
-    }
+    });
 
     await rikz.sendMessage(m.chat, {
       image: { url: "https://files.catbox.moe/k1vd3r.jpg" },
@@ -420,6 +462,7 @@ case 'price-genshin': {
   }
 }
 break;
+
 
 
   
