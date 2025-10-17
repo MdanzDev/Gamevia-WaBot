@@ -86,7 +86,7 @@ const gamesInfo = {
     
 const path = './system/database/users.json';
 
-const userRegistry = {};
+let userRegistry = {};
 if (fs.existsSync(path)) {
     userRegistry = JSON.parse(fs.readFileSync(path));
 } else {
@@ -417,6 +417,13 @@ const gamesInfo = {
 
     // ===== PRICE MENU (BUTTONS) ===== //
     case "price": {
+
+        let userRegistry = {};
+if (fs.existsSync(path)) {
+    userRegistry = JSON.parse(fs.readFileSync(path));
+} else {
+    fs.writeFileSync(path, JSON.stringify({}));
+}
         if (!userRegistry[m.sender]) {
             await rikz.sendMessage(m.chat, { text: "Please register first using .register" }, { quoted: m });
             return;
