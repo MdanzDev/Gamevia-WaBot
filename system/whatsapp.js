@@ -97,18 +97,26 @@ console.log('DEBUG: body:', body);
                 rikz.sendMessage(m.chat, { text: `Registered successfully as ${userRegistry[m.sender].name}` }, { quoted: m });
             break;
 
-                case command == 'id': 
-    if(args.length < 2) return rikz.sendMessage(m.chat, { text: "Usage: .id <USER_ID> <ZONE_ID>" }, { quoted: m });
-    const sessionSlug = args[2] || "mlbb"; // default game if needed
-    const sessionProduct = args[3] || lastSelectedProduct[m.sender]; // track last product if you want
+              case command == 'id':
+    if (!lastSelectedProduct[m.sender]) 
+        return rikz.sendMessage(m.chat, { text: "❌ No product selected. First use the order command." }, { quoted: m });
 
-    if(!sessionProduct) return rikz.sendMessage(m.chat, { text: "Select a product first using .order-<slug>-<srv_code>" }, { quoted: m });
+    if (args.length < 2) 
+        return rikz.sendMessage(m.chat, { text: "Usage: .id <USER_ID> <ZONE_ID>" }, { quoted: m });
 
-    // save order session temporarily
-    orderSessions[m.sender] = { step: "awaiting_confirmation", gameSlug: sessionSlug, product: sessionProduct, orderData: { user_id: args[0], zone_id: args[1] } };
+    const userId = args[0];
+    const zoneId = args[1];
+
+    // Save order session
+    orderSessions[m.sender] = {
+        step: "awaiting_confirmation",
+        product: lastSelectedProduct[m.sender], // product code saved from previous step
+        user_id: userId,
+        zone_id: zoneId
+    };
 
     rikz.sendMessage(m.chat, {
-        text: `✅ Order Info Received\nGame: ${gamesInfo[sessionSlug].name}\nProduct: ${sessionProduct}\nUSER_ID: ${args[0]}\nZONE_ID: ${args[1]}`,
+        text: `✅ Order Info Received\nProduct: ${lastSelectedProduct[m.sender]}\nUSER_ID: ${userId}\nZONE_ID: ${zoneId}`,
         footer: "Confirm or change your order",
         buttons: [
             { buttonId: 'confirm', buttonText: { displayText: 'Confirm' }, type: 1 },
@@ -117,6 +125,7 @@ console.log('DEBUG: body:', body);
         headerType: 1
     }, { quoted: m });
 break;
+
 
 
             case command === 'menu':
