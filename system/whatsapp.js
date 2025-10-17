@@ -348,7 +348,7 @@ break;
 //================ PRICE MENU =================//
 // PRICE MENU (button selection)
 // ================= PRICE MENU (button selection) =================
-case 'price': {
+  
 // PRICE MENU (button selection)
 case 'price': {
   try {
