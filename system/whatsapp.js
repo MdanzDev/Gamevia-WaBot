@@ -950,10 +950,10 @@ class PerformanceMonitor {
             command: cmd,
             count: data.count,
             avgTime: data.totalTime / data.count,
-            frequency: data.count / (uptime / 1000 / 60 / 60)
+            frequency: data.count / (uptime / 1000 / 60 / 60) // per hour
         })).sort((a, b) => b.count - a.count);
 
-        const errorRate = this.metrics.errors.length / (uptime / 1000 / 60 / 60);
+        const errorRate = this.metrics.errors.length / (uptime / 1000 / 60 / 60); // errors per hour
         const apiSuccessRate = this.metrics.apiCalls.total > 0 ?
             ((this.metrics.apiCalls.total - this.metrics.apiCalls.failed) / this.metrics.apiCalls.total) * 100 : 100;
 
@@ -989,7 +989,6 @@ class PerformanceMonitor {
         }, 5 * 60 * 1000);
     }
 }
-
 // ==================== DATABASE MAINTENANCE ====================
 class DatabaseMaintenance {
     constructor() {
@@ -1780,7 +1779,6 @@ Please confirm your order:`;
 
     } catch(err) {
         const duration = Date.now() - startTime;
-        const performanceMonitor = new PerformanceMonitor();
         performanceMonitor.trackError(err, 'main_handler');
         performanceMonitor.trackCommand('ERROR', duration);
         console.log('\x1b[1;31m' + err + '\x1b[0m');
