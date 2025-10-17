@@ -271,9 +271,6 @@ case 'register':
             fs.writeFileSync(pathResellers, JSON.stringify(resellers, null, 2));
             rikz.sendMessage(m.chat, { text: `✅ Added RM${amount} to ${resellerId}. Total: RM${resellers[resellerId].balance}` }, { quoted: m });
         break;
-
-        default:
-            break;
     }
 
  
