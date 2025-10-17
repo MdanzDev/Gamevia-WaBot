@@ -50,8 +50,92 @@ const apiCall = async (endpoint, body = null) => {
 };
 // ==================== END UTILITY FUNCTIONS ====================
 
+
 const API_KEY = "API-GVCDEAD0E38EA13632";
 const API_BASE_URL = "https://api.gamevia.shop/v1";
+
+
+// ==================== INITIALIZE ALL SYSTEMS ====================
+const sessionManager = new SessionManager();
+const cache = new SmartCache();
+const gameCategories = new GameCategoryManager();
+const marketing = new MarketingAutomation();
+const analytics = new AnalyticsSystem();
+const inventory = new InventoryManager();
+const orderTracker = new OrderTracker();
+const fraudPrevention = new FraudPrevention();
+const performanceMonitor = new PerformanceMonitor();
+const databaseMaintenance = new DatabaseMaintenance();
+const retrySystem = new SmartRetrySystem();
+
+
+
+// ==================== MAIN BOT HANDLER ====================
+module.exports = rikz = async (rikz, m, chatUpdate, store) => {
+    const startTime = Date.now();
+    
+    try {
+        const body = (
+            m.mtype === "conversation" ? m.message.conversation :
+            m.mtype === "imageMessage" ? m.message.imageMessage.caption :
+            m.mtype === "videoMessage" ? m.message.videoMessage.caption :
+            m.mtype === "extendedTextMessage" ? m.message.extendedTextMessage.text :
+            m.mtype === "buttonsResponseMessage" ? m.message.buttonsResponseMessage.selectedButtonId :
+            m.mtype === "listResponseMessage" ? m.message.listResponseMessage.singleSelectReply.selectedRowId :
+            m.mtype === "interactiveResponseMessage" ? JSON.parse(m.message.interactiveResponseMessage.nativeFlowResponseMessage.paramsJson).id :
+            m.mtype === "templateButtonReplyMessage" ? m.message.templateButtonReplyMessage.selectedId :
+            m.text || ""
+        );
+
+        if (m.message) {
+            rikz.readMessages([m.key]);
+            const groupName = m.chat.endsWith("@g.us") ? (await rikz.groupMetadata(m.chat).catch(() => ({}))).subject || "" : "";
+            console.log("┏━━━━━━━━━━━━━━━━━━━━━━━=");
+            console.log(`┃¤ ${chalk.hex("#FFD700").bold("📩 NEW MESSAGE")} ${chalk.hex("#00FFFF").bold(`[${new Date().toLocaleTimeString()}]`)} `);
+            console.log(`┃¤ ${chalk.hex("#FF69B4")("💌 From:")} ${chalk.hex("#FFFFFF")(`${m.pushName} (${m.sender})`)} `);
+            console.log(`┃¤ ${chalk.hex("#FFA500")("📍 In:")} ${chalk.hex("#FFFFFF")(`${groupName || "Private Chat"}`)} `);
+            console.log(`┃¤ ${chalk.hex("#00FF00")("📝 Message:")} ${chalk.hex("#FFFFFF")(`${body || m?.mtype || "Unknown"}`)} `);
+            console.log("┗━━━━━━━━━━━━━━━━━━━━━━━=");
+        }
+
+        const prefix = typeof body === "string" ? global.prefix.find(p => body.startsWith(p)) : "";
+        const isCmd = !!prefix;
+        const args = isCmd ? body.slice(prefix.length).trim().split(/ +/).slice(1) : [];
+        const command = isCmd ? body.slice(prefix.length).trim().split(/ +/)[0].toLowerCase() : "";
+        const text = args.join(" ");
+
+        const botNumber = await rikz.decodeJid(rikz.user.id);
+        const premuser = loadJSON("./system/database/premium.json");
+        const isCreator = [botNumber, ...global.owner].map(v => v.replace(/[^0-9]/g, "") + "@s.whatsapp.net").includes(m.sender);
+
+        let userRegistry = loadJSON('./system/database/users.json');
+        let resellers = loadJSON('./system/database/resellers.json');
+        let orders = loadJSON('./system/database/orders.json');
+
+        // Fraud detection
+        const fraudAnalysis = fraudPrevention.analyzeMessage(body, {
+            userId: m.sender,
+            orders: orders[m.sender] || [],
+            isRegistered: !!userRegistry[m.sender]
+        }, {
+            isOrderAttempt: command.startsWith('order-') || command === 'confirm',
+            isAdmin: isCreator
+        });
+
+        if (fraudAnalysis.action === 'block') {
+            console.log(chalk.red(`🚨 BLOCKED user ${m.sender} for suspicious activity: ${fraudAnalysis.flags.join(', ')}`));
+            return rikz.sendMessage(m.chat, { 
+                text: "❌ Your message was flagged for suspicious activity. Please contact support if this is an error." 
+            }, { quoted: m });
+        } else if (fraudAnalysis.action === 'slow') {
+            await new Promise(resolve => setTimeout(resolve, 5000));
+        }
+
+        // Track command in analytics
+        if (isCmd) {
+            analytics.trackCommand(command, m.sender);
+        }
+
 
 // ==================== CONFIGURATION ====================
 const CONFIG = {
@@ -1095,133 +1179,6 @@ class SmartRetrySystem {
     }
 }
 
-// ==================== INITIALIZE ALL SYSTEMS ====================
-const sessionManager = new SessionManager();
-const cache = new SmartCache();
-const gameCategories = new GameCategoryManager();
-const marketing = new MarketingAutomation();
-const analytics = new AnalyticsSystem();
-const inventory = new InventoryManager();
-const orderTracker = new OrderTracker();
-const fraudPrevention = new FraudPrevention();
-const performanceMonitor = new PerformanceMonitor();
-const databaseMaintenance = new DatabaseMaintenance();
-const retrySystem = new SmartRetrySystem();
-
-// ==================== UTILITY FUNCTIONS ====================
-const loadJSON = (path) => {
-    try {
-        return fs.existsSync(path) ? JSON.parse(fs.readFileSync(path)) : {};
-    } catch (error) {
-        console.error(`Error loading ${path}:`, error);
-        return {};
-    }
-};
-
-const saveJSON = (path, data) => {
-    try {
-        fs.ensureFileSync(path);
-        fs.writeFileSync(path, JSON.stringify(data, null, 2));
-    } catch (error) {
-        console.error(`Error saving ${path}:`, error);
-    }
-};
-
-const apiCall = async (endpoint, body = null) => {
-    const startTime = Date.now();
-    try {
-        const response = await fetch(`${API_BASE_URL}/${endpoint}`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "x-api-key": API_KEY
-            },
-            body: body ? JSON.stringify(body) : undefined
-        });
-        const data = await response.json();
-        const duration = Date.now() - startTime;
-        performanceMonitor.trackApiCall(endpoint, data.success, duration);
-        return data;
-    } catch (error) {
-        const duration = Date.now() - startTime;
-        performanceMonitor.trackApiCall(endpoint, false, duration);
-        performanceMonitor.trackError(error, `apiCall: ${endpoint}`);
-        return { success: false, message: "API connection failed" };
-    }
-};
-
-const cachedApiCall = async (endpoint, body = null, ttl = CONFIG.CACHE_TTL) => {
-    const cacheKey = `${endpoint}-${JSON.stringify(body)}`;
-    return cache.getOrSet(cacheKey, async () => {
-        return await apiCall(endpoint, body);
-    }, ttl);
-};
-
-// ==================== MAIN BOT HANDLER ====================
-module.exports = rikz = async (rikz, m, chatUpdate, store) => {
-    const startTime = Date.now();
-    
-    try {
-        const body = (
-            m.mtype === "conversation" ? m.message.conversation :
-            m.mtype === "imageMessage" ? m.message.imageMessage.caption :
-            m.mtype === "videoMessage" ? m.message.videoMessage.caption :
-            m.mtype === "extendedTextMessage" ? m.message.extendedTextMessage.text :
-            m.mtype === "buttonsResponseMessage" ? m.message.buttonsResponseMessage.selectedButtonId :
-            m.mtype === "listResponseMessage" ? m.message.listResponseMessage.singleSelectReply.selectedRowId :
-            m.mtype === "interactiveResponseMessage" ? JSON.parse(m.message.interactiveResponseMessage.nativeFlowResponseMessage.paramsJson).id :
-            m.mtype === "templateButtonReplyMessage" ? m.message.templateButtonReplyMessage.selectedId :
-            m.text || ""
-        );
-
-        if (m.message) {
-            rikz.readMessages([m.key]);
-            const groupName = m.chat.endsWith("@g.us") ? (await rikz.groupMetadata(m.chat).catch(() => ({}))).subject || "" : "";
-            console.log("┏━━━━━━━━━━━━━━━━━━━━━━━=");
-            console.log(`┃¤ ${chalk.hex("#FFD700").bold("📩 NEW MESSAGE")} ${chalk.hex("#00FFFF").bold(`[${new Date().toLocaleTimeString()}]`)} `);
-            console.log(`┃¤ ${chalk.hex("#FF69B4")("💌 From:")} ${chalk.hex("#FFFFFF")(`${m.pushName} (${m.sender})`)} `);
-            console.log(`┃¤ ${chalk.hex("#FFA500")("📍 In:")} ${chalk.hex("#FFFFFF")(`${groupName || "Private Chat"}`)} `);
-            console.log(`┃¤ ${chalk.hex("#00FF00")("📝 Message:")} ${chalk.hex("#FFFFFF")(`${body || m?.mtype || "Unknown"}`)} `);
-            console.log("┗━━━━━━━━━━━━━━━━━━━━━━━=");
-        }
-
-        const prefix = typeof body === "string" ? global.prefix.find(p => body.startsWith(p)) : "";
-        const isCmd = !!prefix;
-        const args = isCmd ? body.slice(prefix.length).trim().split(/ +/).slice(1) : [];
-        const command = isCmd ? body.slice(prefix.length).trim().split(/ +/)[0].toLowerCase() : "";
-        const text = args.join(" ");
-
-        const botNumber = await rikz.decodeJid(rikz.user.id);
-        const premuser = loadJSON("./system/database/premium.json");
-        const isCreator = [botNumber, ...global.owner].map(v => v.replace(/[^0-9]/g, "") + "@s.whatsapp.net").includes(m.sender);
-
-        let userRegistry = loadJSON('./system/database/users.json');
-        let resellers = loadJSON('./system/database/resellers.json');
-        let orders = loadJSON('./system/database/orders.json');
-
-        // Fraud detection
-        const fraudAnalysis = fraudPrevention.analyzeMessage(body, {
-            userId: m.sender,
-            orders: orders[m.sender] || [],
-            isRegistered: !!userRegistry[m.sender]
-        }, {
-            isOrderAttempt: command.startsWith('order-') || command === 'confirm',
-            isAdmin: isCreator
-        });
-
-        if (fraudAnalysis.action === 'block') {
-            console.log(chalk.red(`🚨 BLOCKED user ${m.sender} for suspicious activity: ${fraudAnalysis.flags.join(', ')}`));
-            return rikz.sendMessage(m.chat, { 
-                text: "❌ Your message was flagged for suspicious activity. Please contact support if this is an error." 
-            }, { quoted: m });
-        } else if (fraudAnalysis.action === 'slow') {
-            await new Promise(resolve => setTimeout(resolve, 5000));
-        }
-
-        // Track command in analytics
-        if (isCmd) {
-            analytics.trackCommand(command, m.sender);
-        }
 
         // =============== SWITCH COMMANDS ===============
         switch(command) {
