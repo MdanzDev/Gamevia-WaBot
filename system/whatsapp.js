@@ -446,9 +446,9 @@ case 'price-pubg': {
       return;
     }
 
-    let text = `🎮 ${data.game_name} Top-Up Prices\n\n`;
+    let text = `🎮 ${data.slug} Top-Up Prices\n\n`;
     data.products.forEach(p => {
-      text += `• ${p.name}\n  Code: ${p.srv_code}\n  Price: RM${p.price}\n  Stock: ${p.stock}\n\n`;
+      text += `• ${p.name}\n  Code: ${p.srv_code}\n  Price: RM${p.vprice}\n  Stock: ${p.stock}\n\n`;
     });
 
     await rikz.sendMessage(m.chat, {
