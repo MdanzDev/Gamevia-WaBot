@@ -111,69 +111,82 @@ module.exports = rikz = async (rikz, m, chatUpdate, store) => {
             break;
 
             // Select game products
-            case command.startsWith('select-'):
-                {
-                    const slug = command.replace('select-', '');
-                    if(!gamesInfo[slug]) break;
-                    orderSessions[m.sender] = { step: "awaiting_product", gameSlug: slug };
-                    try{
-                        const res = await fetch("https://api.gamevia.shop/v1/get_products.php", {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json", "x-api-key": API_KEY },
-                            body: JSON.stringify({ slug })
-                        });
-                        const data = await res.json();
-                        if(!data.success || !data.products?.length) return rikz.sendMessage(m.chat, { text: "No products found." }, { quoted: m });
+            //==================== ORDER FLOW ====================//
 
-                        const productButtons = data.products.map(p => {
-                            const profitPrice = (p.vprice * 1.02).toFixed(2);
-                            return { buttonId: `.order-${slug}-${p.srv_code}`, buttonText: { displayText: `${p.name} - RM${profitPrice}` }, type: 1 };
-                        });
+// 1️⃣ Show products when a game is selected
+case command.startsWith('select-') && command:
+{
+    const slug = command.replace('select-', '');
+    if(!gamesInfo[slug]) break;
 
-                        rikz.sendMessage(m.chat, {
-                            text: `🎮 ${gamesInfo[slug].name} Products (2% profit included)`,
-                            footer: 'Select a product to order',
-                            buttons: productButtons,
-                            headerType: 1
-                        }, { quoted: m });
-                    } catch(err){ console.log(err); rikz.sendMessage(m.chat, { text: "Failed to fetch products." }, { quoted: m }); }
-                }
-            break;
+    try {
+        const res = await fetch("https://api.gamevia.shop/v1/get_products.php", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "x-api-key": API_KEY },
+            body: JSON.stringify({ slug })
+        });
+        const data = await res.json();
+        if(!data.success || !data.products?.length) return rikz.sendMessage(m.chat, { text: "No products found." }, { quoted: m });
 
-            // Order button clicked
-            case command.startsWith('order-') && command: {
-    const [slug, srvCode] = command.replace('order-', '').split('-');
-    if(!gamesInfo[slug]) return rikz.sendMessage(m.chat, { text: "❌ Game not found" }, { quoted: m });
+        const productButtons = data.products.map(p => {
+            const profitPrice = (p.price * 1.02).toFixed(2);
+            return { buttonId: `order-${slug}-${p.srv_code}`, buttonText: { displayText: `${p.name} - RM${profitPrice}` }, type: 1 };
+        });
 
-    lastSelectedProduct[m.sender] = srvCode; // Save selected product
-    orderSessions[m.sender] = { step: "awaiting_id", gameSlug: slug, product: srvCode };
+        rikz.sendMessage(m.chat, {
+            text: `🎮 ${gamesInfo[slug].name} Products (2% profit included)`,
+            footer: 'Select a product to order',
+            buttons: productButtons,
+            headerType: 1
+        }, { quoted: m });
 
-    rikz.sendMessage(m.chat, {
-        text: `You selected: ${srvCode}\nNow send your USER_ID and ZONE_ID with the command:\n.id <USER_ID> <ZONE_ID>`,
-        footer: "Example: .id 12345 1",
-        buttons: [],
-        headerType: 1
-    }, { quoted: m });
+    } catch(err){
+        console.log(err);
+        rikz.sendMessage(m.chat, { text: "Failed to fetch products." }, { quoted: m });
+    }
 }
 break;
 
-// ==================== RECEIVE USER_ID & ZONE_ID ====================
-case command === 'id' && args.length >= 2: {
-    if(!lastSelectedProduct[m.sender])
-        return rikz.sendMessage(m.chat, { text: "❌ No product selected. Use the .order command first." }, { quoted: m });
-
-    const [user_id, zone_id] = args;
+// 2️⃣ When product is clicked
+case command.startsWith('order-') && command:
+{
+    const [slug, srvCode] = command.replace('order-', '').split('-');
+    if(!gamesInfo[slug]) break;
 
     orderSessions[m.sender] = {
-        ...orderSessions[m.sender],
+        step: "awaiting_ids",
+        gameSlug: slug,
+        product: srvCode
+    };
+
+    rikz.sendMessage(m.chat, { text: "Please provide USER_ID and ZONE_ID separated by space (e.g., 12345 1):" }, { quoted: m });
+}
+break;
+
+// 3️⃣ Manual .id command shortcut
+case command === 'id':
+{
+    if(args.length < 3) return rikz.sendMessage(m.chat, { text: "Provide USER_ID ZONE_ID SRV_CODE" }, { quoted: m });
+    const [userId, zoneId, srvCode] = args;
+
+    // Optionally: verify srvCode exists in any game
+    let slugFound = null;
+    for(let slug in gamesInfo){
+        slugFound = slug; // for simplicity
+        break;
+    }
+
+    if(!slugFound) return rikz.sendMessage(m.chat, { text: "❌ Invalid product code" }, { quoted: m });
+
+    orderSessions[m.sender] = {
         step: "awaiting_confirmation",
-        user_id,
-        zone_id,
-        product: lastSelectedProduct[m.sender]
+        gameSlug: slugFound,
+        product: srvCode,
+        orderData: { user_id: userId, zone_id: zoneId }
     };
 
     rikz.sendMessage(m.chat, {
-        text: `✅ Order Info Received\nGame: ${gamesInfo[orderSessions[m.sender].gameSlug].name}\nProduct: ${lastSelectedProduct[m.sender]}\nUSER_ID: ${user_id}\nZONE_ID: ${zone_id}`,
+        text: `✅ Order Info Received\nGame: ${gamesInfo[slugFound].name}\nProduct: ${srvCode}\nUSER_ID: ${userId}\nZONE_ID: ${zoneId}`,
         footer: "Confirm or change your order",
         buttons: [
             { buttonId: 'confirm', buttonText: { displayText: 'Confirm' }, type: 1 },
@@ -184,46 +197,74 @@ case command === 'id' && args.length >= 2: {
 }
 break;
 
-// ==================== CONFIRM ORDER ====================
-case command === 'confirm': {
-    const session = orderSessions[m.sender];
-    if(!session || session.step !== "awaiting_confirmation") return;
+// 4️⃣ Receive USER_ID & ZONE_ID from button flow
+case command.match(/^.+$/)?.input:
+{
+    if(orderSessions[m.sender]?.step === "awaiting_ids"){
+        const session = orderSessions[m.sender];
+        const values = args;
+        if(values.length < 2) return rikz.sendMessage(m.chat, { text: "Incomplete info. Provide USER_ID and ZONE_ID." }, { quoted: m });
 
-    // Call Gamevia API
-    try {
-        const res = await fetch("https://api.gamevia.shop/v1/order.php", {
-            method: "POST",
-            headers: { "Content-Type": "application/json", "x-api-key": API_KEY },
-            body: JSON.stringify({
-                srv_code: session.product,
-                user_id: session.user_id,
-                zone_id: session.zone_id
-            })
-        });
-        const data = await res.json();
-        if(data.success) {
-            rikz.sendMessage(m.chat, { text: `✅ Order Success!\nOrder ID: ${data.custom_order_id}\nAmount: RM${data.amount}` }, { quoted: m });
-        } else {
-            rikz.sendMessage(m.chat, { text: `❌ Order Failed: ${data.message}` }, { quoted: m });
-        }
-    } catch(err) {
-        console.log(err);
-        rikz.sendMessage(m.chat, { text: "❌ Order Failed due to API error" }, { quoted: m });
+        session.step = "awaiting_confirmation";
+        session.orderData = { user_id: values[0], zone_id: values[1] };
+
+        rikz.sendMessage(m.chat, {
+            text: `✅ Order Info Received\nGame: ${gamesInfo[session.gameSlug].name}\nProduct: ${session.product}\nUSER_ID: ${values[0]}\nZONE_ID: ${values[1]}`,
+            footer: "Confirm or change your order",
+            buttons: [
+                { buttonId: 'confirm', buttonText: { displayText: 'Confirm' }, type: 1 },
+                { buttonId: 'change', buttonText: { displayText: 'Change Info' }, type: 1 }
+            ],
+            headerType: 1
+        }, { quoted: m });
     }
-
-    // Clear session
-    delete orderSessions[m.sender];
-    delete lastSelectedProduct[m.sender];
 }
 break;
 
-// ==================== CHANGE INFO ====================
-case command === 'change': {
+// 5️⃣ Confirm order
+case command == 'confirm':
+{
     const session = orderSessions[m.sender];
-    if(!session || session.step !== "awaiting_confirmation") return;
+    if(!session || session.step !== "awaiting_confirmation") break;
 
-    session.step = "awaiting_id"; // Go back to asking for USER_ID & ZONE_ID
-    rikz.sendMessage(m.chat, { text: "Please provide new USER_ID and ZONE_ID with the command:\n.id <USER_ID> <ZONE_ID>" }, { quoted: m });
+    const orderId = `PENDING-${Date.now()}`;
+    if(!orders[m.sender]) orders[m.sender] = [];
+
+    const productPrice = 0; // can fetch from product API if needed
+    orders[m.sender].push({
+        id: orderId,
+        gameSlug: session.gameSlug,
+        product: session.product,
+        ...session.orderData,
+        price: productPrice,
+        status: "Pending"
+    });
+
+    rikz.sendMessage(m.chat, { text: `✅ Order placed and pending\nOrder ID: ${orderId}` }, { quoted: m });
+    delete orderSessions[m.sender];
+}
+break;
+
+// 6️⃣ Change order info
+case command == 'change':
+{
+    const session = orderSessions[m.sender];
+    if(!session || session.step !== "awaiting_confirmation") break;
+
+    session.step = "awaiting_ids";
+    rikz.sendMessage(m.chat, { text: "Please provide USER_ID and ZONE_ID:" }, { quoted: m });
+}
+break;
+
+// 7️⃣ View order history (reseller only)
+case command == 'history':
+{
+    const history = orders[m.sender] || [];
+    if(history.length === 0) return rikz.sendMessage(m.chat, { text: "No orders yet." }, { quoted: m });
+
+    const historyText = history.map(o => `• ID: ${o.id}\nGame: ${gamesInfo[o.gameSlug].name}\nProduct: ${o.product}\nUSER_ID: ${o.user_id}\nZONE_ID: ${o.zone_id}\nPrice: RM${o.price}\nStatus: ${o.status}`).join('\n\n');
+
+    rikz.sendMessage(m.chat, { text: `📜 Your Orders:\n\n${historyText}` }, { quoted: m });
 }
 break;
             // Creator only: Add reseller
