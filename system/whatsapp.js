@@ -429,6 +429,27 @@ if (fs.existsSync(path)) {
             return;
         }
 
+        const gamesInfo = {
+    mlbb: { name: "Mobile Legends Malaysia", required: ["user_id", "server_id"] },
+    mlbbbrazil: { name: "Mobile Legends Brazil", required: ["user_id", "server_id"] },
+    mlbbgb: { name: "Mobile Legends Global", required: ["user_id", "server_id"] },
+    mlbbfrmy: { name: "MLBB First Recharge MY", required: ["user_id", "server_id"] },
+    mlbbfrid: { name: "MLBB First Recharge ID", required: ["user_id", "server_id"] },
+    mlbbflashmy: { name: "MLBB Malaysia FS", required: ["user_id", "server_id"] },
+    mlbbid: { name: "MLBB Indonesia", required: ["user_id", "server_id"] },
+    mlbbiditem: { name: "MLBB Indonesia Item", required: ["user_id", "server_id"] },
+    mlbbitem: { name: "MLBB Malaysia Item", required: ["user_id", "server_id"] },
+    mlbbgbitem: { name: "MLBB Global Item", required: ["user_id", "server_id"] },
+    ffsgmyitem: { name: "Free Fire SG/MY Item", required: ["user_id"] },
+    ffsgmy: { name: "Free Fire SG/MY", required: ["user_id"] },
+    mcggid: { name: "Magic Chess Go Go ID", required: ["user_id"] },
+    valomy: { name: "Valorant PC MY", required: ["user_id"] },
+    valoid: { name: "Valorant PC ID", required: ["user_id"] },
+    codmmy: { name: "CODM MY/SG", required: ["user_id"] },
+    dragonrise: { name: "Dragon Raja Rerise SEA", required: ["user_id"] },
+    pubg: { name: "PUBG Mobile", required: ["user_id"] }}
+
+
         const pushname = m.pushName || "User";
         const buttons = Object.keys(gamesInfo).map(slug => ({
             buttonId: `.select-${slug}`,
