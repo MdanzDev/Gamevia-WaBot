@@ -1516,15 +1516,7 @@ ${metrics.popularCommands.map(cmd =>
                 break;
 
             default:
-                // Handle unknown commands
-                if (isCmd && body.length > 1) {
-                    rikz.sendMessage(m.chat, { 
-                        text: `❓ Unknown command: ${command}\n\nUse *.help* to see all available commands.` 
-                    }, { quoted: m });
-                }
-                break;
-        }
-
+       
         // =============== DYNAMIC COMMANDS ===============
              if(command.startsWith('category-')) {
             const categoryKey = command.replace('category-', '');
