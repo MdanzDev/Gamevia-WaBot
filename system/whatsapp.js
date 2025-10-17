@@ -411,6 +411,69 @@ case 'price-genshin': {
     });
 
     const data = await res.json();
+// ===== Slug mapping for price commands =====
+const slugMap = {
+  'price-mlbb-global': 'mlbb-global',
+  'price-mlbb-brazil': 'mlbb-brazil',
+  'price-mlbb-my': 'mlbb-my',
+  'price-codm': 'codm',
+  'price-hok': 'hok',
+  'price-genshin': 'genshin'
+};
+
+// ===== PRICE MENU (button selection) =====
+case 'price': {
+  try {
+    const pushname = m.pushName || "User";
+    const role = m.isOwner ? "Owner" : "User";
+
+    const buttons = [
+      { buttonId: '.price-mlbb-global', buttonText: { displayText: 'MLBB Global' }, type: 1 },
+      { buttonId: '.price-mlbb-brazil', buttonText: { displayText: 'MLBB Brazil' }, type: 1 },
+      { buttonId: '.price-mlbb-my', buttonText: { displayText: 'MLBB Malaysia' }, type: 1 },
+      { buttonId: '.price-codm', buttonText: { displayText: 'COD Mobile' }, type: 1 },
+      { buttonId: '.price-hok', buttonText: { displayText: 'Honor of Kings' }, type: 1 },
+      { buttonId: '.price-genshin', buttonText: { displayText: 'Genshin Impact' }, type: 1 }
+    ];
+
+    const msg = {
+      text: `Hello ${pushname}!\nRole: ${role}\n\nSelect a game below to view top-up prices.`,
+      footer: 'Powered by GameVia',
+      buttons,
+      headerType: 4
+    };
+
+    await rikz.sendMessage(m.chat, msg, { quoted: m });
+  } catch (err) {
+    console.log(err);
+    await rikz.sendMessage(m.chat, { text: 'Error showing price menu.' }, { quoted: m });
+  }
+}
+break;
+
+// ===== PRICE (slug) commands =====
+case 'price-mlbb-global':
+case 'price-mlbb-brazil':
+case 'price-mlbb-my':
+case 'price-codm':
+case 'price-hok':
+case 'price-genshin': {
+  try {
+    const apiKey = "YOUR_API_KEY"; // replace with your GameVia API key
+    const slug = slugMap[command]; // use slugMap here
+
+    await rikz.sendMessage(m.chat, { text: `Fetching top-up prices for ${slug}... ⏳` }, { quoted: m });
+
+    const res = await fetch("https://api.gamevia.shop/v1/get_products.php", {
+      method: "POST",
+      headers: { 
+        "Content-Type": "application/json", 
+        "x-api-key": apiKey 
+      },
+      body: JSON.stringify({ slug })
+    });
+
+    const data = await res.json();
 
     if (!data.success || !data.products || data.products.length === 0) {
       await rikz.sendMessage(m.chat, { text: `No products found for ${slug}.` }, { quoted: m });
