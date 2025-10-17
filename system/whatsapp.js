@@ -217,6 +217,27 @@ module.exports = rikz = async (rikz, m, chatUpdate, store) => {
 
 
   default:
+
+                // Inside default or outside switch
+if(orderSessions[m.sender]?.step === "awaiting_ids") {
+    const session = orderSessions[m.sender];
+    const values = body.trim().split(/ +/); // use raw message text
+    if(values.length < 2) return rikz.sendMessage(m.chat, { text: "Incomplete info. Provide USER_ID and ZONE_ID." }, { quoted: m });
+
+    session.step = "awaiting_confirmation";
+    session.orderData = { user_id: values[0], zone_id: values[1] };
+    rikz.sendMessage(m.chat, {
+        text: `✅ Order Info Received\nGame: ${gamesInfo[session.gameSlug].name}\nProduct: ${session.product}\nUSER_ID: ${values[0]}\nZONE_ID: ${values[1]}`,
+        footer: "Confirm or change your order",
+        buttons: [
+            { buttonId: 'confirm', buttonText: { displayText: 'Confirm' }, type: 1 },
+            { buttonId: 'change', buttonText: { displayText: 'Change Info' }, type: 1 }
+        ],
+        headerType: 1
+    }, { quoted: m });
+}
+
+                
     // Dynamic button handlers
     if(command.startsWith('select-')) {
       const slug = command.replace('select-', '');
