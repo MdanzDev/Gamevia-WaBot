@@ -79,7 +79,7 @@ const gamesInfo = {
     valoid: { name: "Valorant PC ID", required: ["user_id"] },
     codmmy: { name: "CODM MY/SG", required: ["user_id"] },
     dragonrise: { name: "Dragon Raja Rerise SEA", required: ["user_id"] },
-    pubg: { name: "PUBG Mobile", required: ["user_id"] }
+    pubg: { name: "PUBG Mobile", required: ["user_id"] }}
 //======================
 if (m.message) {
 rikz.readMessages([m.key]);
