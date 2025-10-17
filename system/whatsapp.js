@@ -370,12 +370,13 @@ break;
 
 
 
+
     // ===== REGISTER ===== //
     case "register": {
         const pushname = m.pushName || "User";
         if (userRegistry[m.sender]) {
             await rikz.sendMessage(m.chat, { text: "You're already registered." }, { quoted: m });
-            return;
+            break;
         }
         userRegistry[m.sender] = { name: pushname, role: "User" };
         await rikz.sendMessage(m.chat, { text: `Registered successfully as ${pushname}` }, { quoted: m });
@@ -386,9 +387,8 @@ break;
     case "price": {
         if (!userRegistry[m.sender]) {
             await rikz.sendMessage(m.chat, { text: "Please register first using .register" }, { quoted: m });
-            return;
+            break;
         }
-
         const pushname = m.pushName || "User";
         const buttons = Object.keys(gamesInfo).map(slug => ({
             buttonId: `.select-${slug}`,
@@ -407,93 +407,79 @@ break;
     }
     break;
 
-    // ===== PRODUCT SELECTION ===== //
+    // ===== PRODUCT SELECTION / ORDER ===== //
     default: {
-        // Match button payload like .select-mlbb
+        // handle .select-* buttons
         const matchSelect = command.match(/^\.select-(.+)$/);
         if (matchSelect) {
             const slug = matchSelect[1];
-            if (!gamesInfo[slug]) return;
+            if (!gamesInfo[slug]) break;
 
-            // Start an order session
             orderSessions[m.sender] = { step: "awaiting_product", gameSlug: slug };
-
             await rikz.sendMessage(m.chat, { text: `Fetching top-up prices for ${gamesInfo[slug].name}... ⏳` }, { quoted: m });
 
-            // Fetch products
             try {
                 const res = await fetch("https://api.gamevia.shop/v1/get_products.php", {
                     method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "x-api-key": API_KEY
-                    },
+                    headers: { "Content-Type": "application/json", "x-api-key": API_KEY },
                     body: JSON.stringify({ slug })
                 });
                 const data = await res.json();
                 if (!data.success || !data.products || data.products.length === 0) {
                     await rikz.sendMessage(m.chat, { text: `No products found for ${gamesInfo[slug].name}` }, { quoted: m });
-                    return;
+                    break;
                 }
 
-                // List products as buttons
                 const productButtons = data.products.map(p => ({
                     buttonId: `.order-${slug}-${p.srv_code}`,
                     buttonText: { displayText: `${p.name} - RM${p.price}` },
                     type: 1
                 }));
 
-                const productMsg = {
+                await rikz.sendMessage(m.chat, {
                     text: `🎮 ${gamesInfo[slug].name} Top-Up Prices\nSelect a product to order:`,
                     footer: 'You can select any product',
                     buttons: productButtons,
                     headerType: 1
-                };
-
-                await rikz.sendMessage(m.chat, productMsg, { quoted: m });
+                }, { quoted: m });
 
             } catch (err) {
                 console.log(err);
                 await rikz.sendMessage(m.chat, { text: "Failed to fetch product data." }, { quoted: m });
             }
-            return;
+            break;
         }
 
-        // ===== PRODUCT ORDER BUTTON ===== //
+        // handle .order-* buttons
         const matchOrder = command.match(/^\.order-(.+)-(.+)$/);
         if (matchOrder) {
             const slug = matchOrder[1];
             const srvCode = matchOrder[2];
-            if (!gamesInfo[slug]) return;
+            if (!gamesInfo[slug]) break;
 
-            // Save selected product
             orderSessions[m.sender] = { ...orderSessions[m.sender], step: "awaiting_ids", product: srvCode };
-
             const requiredFields = gamesInfo[slug].required;
             let askText = "Please provide the following info:\n";
             requiredFields.forEach(f => askText += `• ${f.replace("_", " ").toUpperCase()}\n`);
 
             await rikz.sendMessage(m.chat, { text: askText }, { quoted: m });
-            return;
+            break;
         }
 
-        // ===== RECEIVE USER INPUT FOR ORDER ===== //
+        // handle user input for order info
         if (orderSessions[m.sender] && orderSessions[m.sender].step === "awaiting_ids") {
             const session = orderSessions[m.sender];
             const slug = session.gameSlug;
             const requiredFields = gamesInfo[slug].required;
 
-            // Parse user input (simple CSV split)
             const values = m.text.split(/[\s,]+/);
             if (values.length < requiredFields.length) {
                 await rikz.sendMessage(m.chat, { text: `You must provide all fields: ${requiredFields.join(", ")}` }, { quoted: m });
-                return;
+                break;
             }
 
-            // Save user input
             const orderData = {};
             requiredFields.forEach((f, i) => orderData[f] = values[i]);
-
             session.step = "awaiting_confirmation";
             session.orderData = orderData;
 
@@ -511,24 +497,17 @@ break;
                 buttons: confirmButtons,
                 headerType: 1
             });
-            return;
+            break;
         }
 
-        // ===== CONFIRM OR CHANGE ===== //
+        // confirm or change
         if (command === ".confirm" && orderSessions[m.sender] && orderSessions[m.sender].step === "awaiting_confirmation") {
             const session = orderSessions[m.sender];
-
             try {
                 const res = await fetch("https://api.gamevia.shop/v1/order.php", {
                     method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "x-api-key": API_KEY
-                    },
-                    body: JSON.stringify({
-                        srv_code: session.product,
-                        ...session.orderData
-                    })
+                    headers: { "Content-Type": "application/json", "x-api-key": API_KEY },
+                    body: JSON.stringify({ srv_code: session.product, ...session.orderData })
                 });
                 const data = await res.json();
                 if (data.success) {
@@ -540,34 +519,24 @@ break;
                 console.log(err);
                 await rikz.sendMessage(m.chat, { text: `❌ Order Failed` }, { quoted: m });
             }
-
-            delete orderSessions[m.sender]; // clear session
-            return;
+            delete orderSessions[m.sender];
+            break;
         }
 
         if (command === ".change" && orderSessions[m.sender] && orderSessions[m.sender].step === "awaiting_confirmation") {
-            // Go back to info collection
             orderSessions[m.sender].step = "awaiting_ids";
             const slug = orderSessions[m.sender].gameSlug;
             const requiredFields = gamesInfo[slug].required;
             let askText = "Please provide the following info:\n";
             requiredFields.forEach(f => askText += `• ${f.replace("_", " ").toUpperCase()}\n`);
             await rikz.sendMessage(m.chat, { text: askText }, { quoted: m });
-            return;
+            break;
         }
     }
-}
 
-
-
-
-  
-
-    
-case "traxc": {
-let itsmenu = 
-`
-
+    // ===== TRAXC MENU ===== //
+    case "traxc": {
+        let itsmenu = `
 > 口 𝙏𝙍𝘼𝙓𝘾 _𝗩𝗘𝗥𝗦𝗜𝗢𝗡_ 𝟰 !!
 Hello! Have A Nice Day!🤍
 
@@ -580,8 +549,8 @@ _"jangan berpikir tidak mungkin, tapi berpikirlah bagaimana caranya"_
 ❒ Status : *Free*
 
 – 𝐎𝐖𝐍𝐄𝐑 𝐌𝐄𝐍𝐔
-➛ . addmurbug
-➛ . delmurbug
+➛ .addmurbug
+➛ .delmurbug
 
 – 𝐁𝐔𝐆 𝐌𝐄𝐍𝐔
 ➛ .amba-crot 62xxx
@@ -597,15 +566,15 @@ _"jangan berpikir tidak mungkin, tapi berpikirlah bagaimana caranya"_
 *Script Information :*
 https://whatsapp.com/channel/0029Vb6OnKIIHphDJHrHPD0a
 > © VallxDev (DEV NGUAWUR CIKK)
-
 `;
-await rikz.sendMessage(m.chat, {
-image: { url: "https://files.catbox.moe/k1vd3r.jpg" },
-caption: itsmenu
-}, { quoted: m });
-}
-break; 
 
+        await rikz.sendMessage(m.chat, {
+            image: { url: "https://files.catbox.moe/k1vd3r.jpg" },
+            caption: itsmenu
+        }, { quoted: m });
+    }
+    break;
+}
 //======================
 case "addmurbug": {
 if (!isCreator) return m.reply(mess.owner);
