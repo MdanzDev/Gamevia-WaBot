@@ -1526,22 +1526,34 @@ ${metrics.popularCommands.map(cmd =>
         }
 
         // =============== DYNAMIC COMMANDS ===============
-        if(command.startsWith('category-')) {
+             if(command.startsWith('category-')) {
             const categoryKey = command.replace('category-', '');
             const category = gameCategories.getAllCategories()[categoryKey];
             
             if (!category) return;
 
             try {
-                const gamesData = await cachedApiCall('check_games.php');
-                if (!gamesData.success) return;
+                // Use apiCall instead of cachedApiCall for debugging
+                const gamesData = await apiCall('check_games.php');
+                console.log('Games API Response:', gamesData); // Log the response
+
+                if (!gamesData.success) {
+                    console.log('Games API failed:', gamesData);
+                    return rikz.sendMessage(m.chat, { text: "Failed to load games from API." }, { quoted: m });
+                }
 
                 const categoryGames = gamesData.games.filter(game => 
                     category.games.includes(game.slug)
                 );
 
+                console.log('Category games:', categoryGames); // Log the filtered games
+
+                if (categoryGames.length === 0) {
+                    return rikz.sendMessage(m.chat, { text: "No games found in this category." }, { quoted: m });
+                }
+
                 const gameButtons = categoryGames.map(game => ({
-                    buttonId: `.select-${game.slug}`,
+                    buttonId: `select-${game.slug}`,
                     buttonText: { displayText: game.name },
                     type: 1
                 }));
@@ -1560,10 +1572,10 @@ ${metrics.popularCommands.map(cmd =>
                 }, { quoted: m });
 
             } catch(err) {
+                console.error('Error in category command:', err);
                 rikz.sendMessage(m.chat, { text: "Failed to load games." }, { quoted: m });
             }
         }
-
         else if(command.startsWith('select-')) {
             const slug = command.replace('select-', '');
             
