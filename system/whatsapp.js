@@ -356,7 +356,8 @@ case 'price': {
       { buttonId: '.price-mlbb-brazil', buttonText: { displayText: 'MLBB Brazil' }, type: 1 },
       { buttonId: '.price-mlbb-my', buttonText: { displayText: 'MLBB Malaysia' }, type: 1 },
       { buttonId: '.price-codm', buttonText: { displayText: 'Call of Duty Mobile' }, type: 1 },
-      { buttonId: '.price-genshin', buttonText: { displayText: 'Genshin Impact' }, type: 1 }
+      { buttonId: '.price-genshin', buttonText: { displayText: 'Genshin Impact' }, type: 1 },
+      { buttonId: '.price-hok', buttonText: { displayText: 'Honor Of King' }, type: 1 }
     ];
 
     const msg = {
@@ -375,10 +376,12 @@ case 'price': {
 break;
 
 //================ PRICE (slug) =================//
-case 'price-mlbb-global':
+
+ case 'price-mlbb-global':   
 case 'price-mlbb-brazil':
 case 'price-mlbb-my':
 case 'price-codm':
+case 'price-hok':   
 case 'price-genshin': {
   try {
     const apiKey = "API-GVCDEAD0E38EA13632"; // replace with your key
