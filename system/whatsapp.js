@@ -294,102 +294,82 @@ break
 //======================
 
 //================ MENU =================//
+//=========================
+// MENU
+//=========================
 case 'menu': {
-  try {
-    const pushname = m.pushName || "User";
-    const role = m.isOwner ? "Owner" : "User";
+  const pushname = m.pushName || "User";
+  const role = m.isOwner ? "Owner" : "User";
 
-    const buttons = [
+  const msg = {
+    text: `👋 Hello ${pushname}!\nRole: ${role}\n\nWelcome to Traxc Bot 4.0\n\nSelect a command from below to get started.`,
+    footer: 'Powered by GameVia',
+    buttons: [
       { buttonId: '.help', buttonText: { displayText: 'Help' }, type: 1 },
       { buttonId: '.price', buttonText: { displayText: 'Top-Up Prices' }, type: 1 }
-    ];
+    ],
+    headerType: 1
+  };
 
-    const msg = {
-      text: `Hello ${pushname}\nRole: ${role}\n\nWelcome to Traxc Bot v4!\nSelect an option below to get started.`,
-      footer: 'Powered by GameVia',
-      buttons,
-      headerType: 4
-    };
-
-    await rikz.sendMessage(m.chat, msg, { quoted: m });
-  } catch (err) {
-    console.log(err);
-    await rikz.sendMessage(m.chat, { text: 'Error showing main menu.' }, { quoted: m });
-  }
+  await rikz.sendMessage(m.chat, msg, { quoted: m });
 }
 break;
 
-//================ HELP =================//
+//=========================
+// HELP
+//=========================
 case 'help': {
-  try {
-    const pushname = m.pushName || "User";
-    const role = m.isOwner ? "Owner" : "User";
+  const pushname = m.pushName || "User";
 
-    const buttons = [
-      { buttonId: '.menu', buttonText: { displayText: 'Main Menu' }, type: 1 },
-      { buttonId: '.price', buttonText: { displayText: 'Top-Up Prices' }, type: 1 }
-    ];
+  const msg = {
+    text: `📖 Help - Traxc Bot Commands
 
-    const msg = {
-      text: `Hello ${pushname}\nRole: ${role}\n\nCommands available:\n\n- .menu : Show main menu\n- .help : Show this help message\n- .price : Show top-up price menu`,
-      footer: 'Powered by GameVia',
-      buttons,
-      headerType: 4
-    };
+• .menu - Show main menu
+• .help - Show this help
+• .price - View top-up prices for games
 
-    await rikz.sendMessage(m.chat, msg, { quoted: m });
-  } catch (err) {
-    console.log(err);
-    await rikz.sendMessage(m.chat, { text: 'Error showing help menu.' }, { quoted: m });
-  }
+Select a command above.`,
+    footer: 'Traxc Bot 4.0',
+    buttons: [
+      { buttonId: '.menu', buttonText: { displayText: 'Main Menu' }, type: 1 }
+    ],
+    headerType: 1
+  };
+
+  await rikz.sendMessage(m.chat, msg, { quoted: m });
 }
 break;
 
-//================ PRICE MENU =================//
-// PRICE MENU (button selection)
-// ================= PRICE MENU (button selection) =================
-  
-// ===== Slug mapping for price commands =====
-const slugMap = {
-  'price-mlbb-global': 'mlbb-global',
-  'price-mlbb-brazil': 'mlbb-brazil',
-  'price-mlbb-my': 'mlbb-my',
-  'price-codm': 'codm',
-  'price-hok': 'hok',
-  'price-genshin': 'genshin'
-};
-
-// ===== PRICE MENU (button selection) =====
+//=========================
+// PRICE MENU (BUTTON SELECTION)
+//=========================
 case 'price': {
-  try {
-    const pushname = m.pushName || "User";
-    const role = m.isOwner ? "Owner" : "User";
+  const pushname = m.pushName || "User";
+  const role = m.isOwner ? "Owner" : "User";
 
-    const buttons = [
-      { buttonId: '.price-mlbb-global', buttonText: { displayText: 'MLBB Global' }, type: 1 },
-      { buttonId: '.price-mlbb-brazil', buttonText: { displayText: 'MLBB Brazil' }, type: 1 },
-      { buttonId: '.price-mlbb-my', buttonText: { displayText: 'MLBB Malaysia' }, type: 1 },
-      { buttonId: '.price-codm', buttonText: { displayText: 'COD Mobile' }, type: 1 },
-      { buttonId: '.price-hok', buttonText: { displayText: 'Honor of Kings' }, type: 1 },
-      { buttonId: '.price-genshin', buttonText: { displayText: 'Genshin Impact' }, type: 1 }
-    ];
+  const buttons = [
+    { buttonId: '.price-mlbb-global', buttonText: { displayText: 'MLBB Global' }, type: 1 },
+    { buttonId: '.price-mlbb-brazil', buttonText: { displayText: 'MLBB Brazil' }, type: 1 },
+    { buttonId: '.price-mlbb-my', buttonText: { displayText: 'MLBB MY' }, type: 1 },
+    { buttonId: '.price-codm', buttonText: { displayText: 'CODM' }, type: 1 },
+    { buttonId: '.price-hok', buttonText: { displayText: 'Honor of Kings' }, type: 1 },
+    { buttonId: '.price-genshin', buttonText: { displayText: 'Genshin Impact' }, type: 1 }
+  ];
 
-    const msg = {
-      text: `Hello ${pushname}!\nRole: ${role}\n\nSelect a game below to view top-up prices.`,
-      footer: 'Powered by GameVia',
-      buttons,
-      headerType: 4
-    };
+  const msg = {
+    text: `Hello ${pushname}\nRole: ${role}\n\nSelect a game below to check top-up prices.`,
+    footer: 'Powered by GameVia',
+    buttons,
+    headerType: 1
+  };
 
-    await rikz.sendMessage(m.chat, msg, { quoted: m });
-  } catch (err) {
-    console.log(err);
-    await rikz.sendMessage(m.chat, { text: 'Error showing price menu.' }, { quoted: m });
-  }
+  await rikz.sendMessage(m.chat, msg, { quoted: m });
 }
 break;
 
-// ===== PRICE (slug) commands =====
+//=========================
+// PRICE (SLUGGED) -> Show all prices for a selected game
+//=========================
 case 'price-mlbb-global':
 case 'price-mlbb-brazil':
 case 'price-mlbb-my':
@@ -397,16 +377,22 @@ case 'price-codm':
 case 'price-hok':
 case 'price-genshin': {
   try {
-    const apiKey = "YOUR_API_KEY"; // replace with your GameVia API key
-    const slug = slugMap[command]; // use slugMap here
-
-    await rikz.sendMessage(m.chat, { text: `Fetching top-up prices for ${slug}... ⏳` }, { quoted: m });
+    const apiKey = "API-GVCDEAD0E38EA13632"; // replace with your API key
+    const slugMap = {
+      'price-mlbb-global': 'mlbb-global',
+      'price-mlbb-brazil': 'mlbb-brazil',
+      'price-mlbb-my': 'mlbb-my',
+      'price-codm': 'codm',
+      'price-hok': 'hok',
+      'price-genshin': 'genshin'
+    };
+    const slug = slugMap[command];
 
     const res = await fetch("https://api.gamevia.shop/v1/get_products.php", {
       method: "POST",
-      headers: { 
-        "Content-Type": "application/json", 
-        "x-api-key": apiKey 
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey
       },
       body: JSON.stringify({ slug })
     });
@@ -418,14 +404,10 @@ case 'price-genshin': {
       return;
     }
 
-    let text = `🎮 ${data.game_name || slug} Top-Up Prices\n\n`;
-    text += `Slug: ${slug}\n\n`;
-
-    data.products.forEach((p, i) => {
-      const price = p.price ?? "N/A";
-      const stock = p.stock ?? "N/A";
-      text += `${i+1}. ${p.name}\n   Code: ${p.srv_code}\n   Price: RM${price}\n   Stock: ${stock}\n\n`;
-    });
+    let text = `🎮 ${data.game_name} Top-Up Prices\n\n`;
+    for (const p of data.products) {
+      text += `• ${p.name}\n  Code: ${p.srv_code}\n  Price: RM${p.price}\n  Stock: ${p.stock}\n\n`;
+    }
 
     await rikz.sendMessage(m.chat, {
       image: { url: "https://files.catbox.moe/k1vd3r.jpg" },
@@ -438,7 +420,7 @@ case 'price-genshin': {
   }
 }
 break;
-// ===== PRICE (slug) commands =====
+
 
   
 
