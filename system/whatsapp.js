@@ -1572,7 +1572,7 @@ ${metrics.popularCommands.map(cmd =>
             const slug = command.replace('select-', '');
             
             try {
-                const data = await ApiCall('get_products.php', { slug });
+                const data = await apiCall('get_products.php', { slug });
                 if(!data.success || !data.products?.length) {
                     return rikz.sendMessage(m.chat, { text: "No products available for this game." }, { quoted: m });
                 }
@@ -1619,7 +1619,7 @@ ${metrics.popularCommands.map(cmd =>
             
             let gameName = slug;
             try {
-                const gamesData = await ApiCall('check_games.php');
+                const gamesData = await apiCall('check_games.php');
                 if (gamesData.success) {
                     const game = gamesData.games.find(g => g.slug === slug);
                     if (game) gameName = game.name;
@@ -1743,7 +1743,7 @@ ${metrics.popularCommands.map(cmd =>
             let productName = session.productCode;
             let price = "0.00";
             try {
-                const productData = await ApiCall('get_products.php', { slug: session.gameSlug });
+                const productData = await apiCall('get_products.php', { slug: session.gameSlug });
                 const product = productData.products?.find(p => p.srv_code === session.productCode);
                 if (product) {
                     productName = product.name;
