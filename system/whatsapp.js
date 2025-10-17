@@ -113,55 +113,6 @@ module.exports = rikz = async (rikz, m, chatUpdate, store) => {
             // Select game products
             //==================== ORDER FLOW ====================//
 
-// 1️⃣ Show products when a game is selected
-case command.startsWith('select-') && command:
-{
-    const slug = command.replace('select-', '');
-    if(!gamesInfo[slug]) break;
-
-    try {
-        const res = await fetch("https://api.gamevia.shop/v1/get_products.php", {
-            method: "POST",
-            headers: { "Content-Type": "application/json", "x-api-key": API_KEY },
-            body: JSON.stringify({ slug })
-        });
-        const data = await res.json();
-        if(!data.success || !data.products?.length) return rikz.sendMessage(m.chat, { text: "No products found." }, { quoted: m });
-
-        const productButtons = data.products.map(p => {
-            const profitPrice = (p.price * 1.02).toFixed(2);
-            return { buttonId: `order-${slug}-${p.srv_code}`, buttonText: { displayText: `${p.name} - RM${profitPrice}` }, type: 1 };
-        });
-
-        rikz.sendMessage(m.chat, {
-            text: `🎮 ${gamesInfo[slug].name} Products (2% profit included)`,
-            footer: 'Select a product to order',
-            buttons: productButtons,
-            headerType: 1
-        }, { quoted: m });
-
-    } catch(err){
-        console.log(err);
-        rikz.sendMessage(m.chat, { text: "Failed to fetch products." }, { quoted: m });
-    }
-}
-break;
-
-// 2️⃣ When product is clicked
-case command.startsWith('order-') && command:
-{
-    const [slug, srvCode] = command.replace('order-', '').split('-');
-    if(!gamesInfo[slug]) break;
-
-    orderSessions[m.sender] = {
-        step: "awaiting_ids",
-        gameSlug: slug,
-        product: srvCode
-    };
-
-    rikz.sendMessage(m.chat, { text: "Please provide USER_ID and ZONE_ID separated by space (e.g., 12345 1):" }, { quoted: m });
-}
-break;
 
 // 3️⃣ Manual .id command shortcut
 case command === 'id':
