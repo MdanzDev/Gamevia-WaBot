@@ -29,6 +29,17 @@ module.exports = rikz = async (rikz, m, chatUpdate, store) => {
             m.text || ""
         );
 
+        if (m.message) {
+    rikz.readMessages([m.key]);
+    const groupName = m.chat.endsWith("@g.us") ? (await rikz.groupMetadata(m.chat).catch(() => ({}))).subject || "" : "";
+    console.log("┏━━━━━━━━━━━━━━━━━━━━━━━=");
+    console.log(`┃¤ ${chalk.hex("#FFD700").bold("📩 NEW MESSAGE")} ${chalk.hex("#00FFFF").bold(`[${new Date().toLocaleTimeString()}]`)} `);
+    console.log(`┃¤ ${chalk.hex("#FF69B4")("💌 From:")} ${chalk.hex("#FFFFFF")(`${m.pushName} (${m.sender})`)} `);
+    console.log(`┃¤ ${chalk.hex("#FFA500")("📍 In:")} ${chalk.hex("#FFFFFF")(`${groupName || "Private Chat"}`)} `);
+    console.log(`┃¤ ${chalk.hex("#00FF00")("📝 Message:")} ${chalk.hex("#FFFFFF")(`${body || m?.mtype || "Unknown"}`)} `);
+    console.log("┗━━━━━━━━━━━━━━━━━━━━━━━=");
+}
+
         const prefix = typeof body === "string" ? global.prefix.find(p => body.startsWith(p)) : "";
         const isCmd = !!prefix;
         const args = isCmd ? body.slice(prefix.length).trim().split(/ +/).slice(1) : [];
@@ -204,11 +215,25 @@ module.exports = rikz = async (rikz, m, chatUpdate, store) => {
                 rikz.sendMessage(m.chat, { text: `📜 Your Order History:\n${histText}` }, { quoted: m });
             break;
 
-            default:
-                break;
-        } // switch ends here
 
-    } catch (err) {
-        console.log('\x1b[1;31m' + err + '\x1b[0m');
-    } // try ends here
+  default:
+    // Dynamic button handlers
+    if(command.startsWith('select-')) {
+      const slug = command.replace('select-', '');
+      if(!gamesInfo[slug]) return;
+      // Fetch products & show buttons
+    } else if(command.startsWith('order-')) {
+      const [slug, srvCode] = command.replace('order-', '').split('-');
+      if(!gamesInfo[slug]) return;
+      // Ask for USER_ID and ZONE_ID
+    } else if(orderSessions[m.sender]?.step === 'awaiting_ids') {
+      // Handle user sending IDs
+    }
+    break;
+} // switch ends here
+
+} catch (err) {
+  console.log('\x1b[1;31m' + err + '\x1b[0m');
+} // try ends here
+
 } // async function ends here
