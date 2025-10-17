@@ -61,7 +61,16 @@ const groupName = groupMetadata.subject || "";
     // In-memory storage for sessions and registry
 global.orderSessions = {};
 
-const userRegistry = {}; // stores user info by sender ID
+const fs = require('fs');
+const path = './system/database/users.json';
+
+let userRegistry = {};
+if (fs.existsSync(path)) {
+    userRegistry = JSON.parse(fs.readFileSync(path));
+} else {
+    fs.writeFileSync(path, JSON.stringify({}));
+}
+
 
 const gamesInfo = {
     mlbb: { name: "Mobile Legends Malaysia", required: ["user_id", "server_id"] },
@@ -374,6 +383,7 @@ break;
 
 
 // ===== REGISTER ===== //
+// ===== REGISTER ===== //
 case "register": {
     const pushname = m.pushName || "User";
     if (userRegistry[m.sender]) {
@@ -381,6 +391,10 @@ case "register": {
         return;
     }
     userRegistry[m.sender] = { name: pushname, role: "User" };
+
+    // Save to JSON
+    fs.writeFileSync(path, JSON.stringify(userRegistry, null, 2));
+
     await rikz.sendMessage(m.chat, { text: `Registered successfully as ${pushname}` }, { quoted: m });
 }
 break;
