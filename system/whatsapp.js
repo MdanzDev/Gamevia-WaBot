@@ -503,10 +503,10 @@ ${Object.entries(dailyStatsData.popularGames)
                 
                 // Show available games for selection
                 const gameButtons = [
-                    { buttonId: 'select-mlbb', buttonText: { displayText: 'Mobile Legends' }, type: 1 },
-                    { buttonId: 'select-ff', buttonText: { displayText: 'Free Fire' }, type: 1 },
-                    { buttonId: 'select-pubg', buttonText: { displayText: 'PUBG Mobile' }, type: 1 },
-                    { buttonId: 'select-cod', buttonText: { displayText: 'Call of Duty' }, type: 1 }
+                    { buttonId: '.select-mlbb', buttonText: { displayText: 'Mobile Legends' }, type: 1 },
+                    { buttonId: '.select-ff', buttonText: { displayText: 'Free Fire' }, type: 1 },
+                    { buttonId: '.select-pubg', buttonText: { displayText: 'PUBG Mobile' }, type: 1 },
+                    { buttonId: '.select-cod', buttonText: { displayText: 'Call of Duty' }, type: 1 }
                 ];
 
                 const userCurrencyPrice = userRegistry[m.sender]?.currency || 'MYR';
@@ -531,10 +531,10 @@ ${Object.entries(dailyStatsData.popularGames)
 
                 const userCurrency = userRegistry[m.sender]?.currency || 'MYR';
                 const productButtons = data.products.map(product => {
-                    const profitPrice = (product.price * 1.02); // 2% profit
+                    const profitPrice = (product.vprice * 1.02); // 2% profit
                     const displayPrice = formatPrice(profitPrice, userCurrency);
                     return {
-                        buttonId: `order-${slug}-${product.srv_code}`,
+                        buttonId: `.order-${slug}-${product.srv_code}`,
                         buttonText: { displayText: `${product.name} - ${displayPrice}` },
                         type: 1
                     };
@@ -685,8 +685,8 @@ Please confirm your order:`;
                 text: confirmationText,
                 footer: "Check the information above before confirming",
                 buttons: [
-                    { buttonId: 'confirm', buttonText: { displayText: '✅ Confirm Order' }, type: 1 },
-                    { buttonId: 'change', buttonText: { displayText: '✏️ Change Info' }, type: 1 }
+                    { buttonId: '.confirm', buttonText: { displayText: '✅ Confirm Order' }, type: 1 },
+                    { buttonId: '.change', buttonText: { displayText: '✏️ Change Info' }, type: 1 }
                 ],
                 headerType: 1
             }, { quoted: m });
