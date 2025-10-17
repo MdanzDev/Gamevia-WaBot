@@ -574,7 +574,7 @@ https://whatsapp.com/channel/0029Vb6OnKIIHphDJHrHPD0a
         }, { quoted: m });
     }
     break;
-}
+
 //======================
 case "addmurbug": {
 if (!isCreator) return m.reply(mess.owner);
