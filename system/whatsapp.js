@@ -90,8 +90,9 @@ const pathResellers = './system/database/resellers.json';
 // Load users & resellers
 let userRegistry = fs.existsSync(pathUsers) ? JSON.parse(fs.readFileSync(pathUsers)) : {};
 let resellers = fs.existsSync(pathResellers) ? JSON.parse(fs.readFileSync(pathResellers)) : {};
-let orderSessions = {};
 
+let orderSessions = {};
+let orders = {}; // { sender: [ {id, slug, srv_code, user_id, zone_id, price, status} ] }
 
 
 //======================
