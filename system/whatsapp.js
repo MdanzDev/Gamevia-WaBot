@@ -457,12 +457,12 @@ case /^price-(.+)$/i.test(command) && command: {
         // convert products to buttons
         const productButtons = data.products.map(p => ({
             buttonId: `.order-${p.srv_code}`, 
-            buttonText: { displayText: `${p.name} - RM${p.price}` },
+            buttonText: { displayText: `${p.name} - RM${p.vprice}` },
             type: 1
         }));
 
         const msg = {
-            text: `🎮 ${data.game_name} Top-Up Prices\nSelect a product to order:`,
+            text: `🎮 ${data.slug} Top-Up Prices\nSelect a product to order:`,
             footer: 'Powered by GameVia',
             buttons: productButtons,
             headerType: 1
