@@ -607,8 +607,8 @@ Please confirm your order:`;
                     { buttonId: '.change', buttonText: { displayText: '✏️ Change Info' }, type: 1 }
                 ],
                 headerType: 1
-            }, { quoted: m );
-        }
+            }, { quoted: m )};
+        
 
         // Track abandoned carts
         if (sessionManager.getSession(m.sender) && body.toLowerCase().includes('cancel')) {
