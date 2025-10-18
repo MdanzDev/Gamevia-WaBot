@@ -48,15 +48,16 @@ class FirebaseManager {
             console.log(chalk.green(`📁 Project: ${serviceAccount.project_id}`));
             console.log(chalk.green(`📧 Client: ${serviceAccount.client_email}`));
 
-            // FIX: Properly format the private key
-            console.log(chalk.blue('🔧 Formatting private key...'));
-            serviceAccount.private_key = this.formatPrivateKey(serviceAccount.private_key);
+            // FIX: Only fix escaped newlines, don't reformat the entire key
+            console.log(chalk.blue('🔧 Checking private key format...'));
+            serviceAccount.private_key = this.safeFormatPrivateKey(serviceAccount.private_key);
             
-            // Log private key info (first/last chars for debugging)
+            // Log private key info for debugging
             const pk = serviceAccount.private_key;
-            console.log(chalk.blue(`🔑 Private key: ${pk.length} chars`));
-            console.log(chalk.blue(`🔑 Starts with: ${pk.substring(0, 30)}...`));
-            console.log(chalk.blue(`🔑 Ends with: ...${pk.substring(pk.length - 30)}`));
+            console.log(chalk.blue(`🔑 Private key length: ${pk.length} chars`));
+            console.log(chalk.blue(`🔑 Has BEGIN: ${pk.includes('BEGIN PRIVATE KEY')}`));
+            console.log(chalk.blue(`🔑 Has END: ${pk.includes('END PRIVATE KEY')}`));
+            console.log(chalk.blue(`🔑 Line count: ${pk.split('\n').length}`));
 
             // Initialize Firebase
             if (admin.apps.length === 0) {
@@ -69,6 +70,7 @@ class FirebaseManager {
                     console.log(chalk.green('✅ Firebase app initialized'));
                 } catch (initError) {
                     console.log(chalk.red('❌ Firebase app initialization failed:'), initError.message);
+                    console.log(chalk.yellow('💡 Tip: The private key format might be incorrect.'));
                     return;
                 }
             }
@@ -76,7 +78,7 @@ class FirebaseManager {
             this.db = admin.firestore();
             console.log(chalk.green('✅ Firestore database instance created'));
             
-            // Test connection with better error handling
+            // Test connection
             setTimeout(async () => {
                 await this.testConnectionWithRetry();
             }, 2000);
@@ -87,25 +89,36 @@ class FirebaseManager {
         }
     }
 
-    formatPrivateKey(privateKey) {
+    safeFormatPrivateKey(privateKey) {
         if (!privateKey) return privateKey;
         
-        // Remove any existing formatting and ensure proper PEM format
-        let formattedKey = privateKey
-            .replace(/\\n/g, '\n')  // Replace escaped newlines
-            .replace(/"/g, '')      // Remove quotes if present
-            .trim();
+        console.log(chalk.blue('🔄 Original key format check...'));
         
-        // Ensure it has proper BEGIN/END headers
-        if (!formattedKey.includes('BEGIN PRIVATE KEY')) {
+        // If the key already has proper PEM format, just fix escaped newlines
+        if (privateKey.includes('BEGIN PRIVATE KEY') && privateKey.includes('END PRIVATE KEY')) {
+            console.log(chalk.green('✅ Key already has proper PEM format'));
+            
+            // Only replace escaped newlines, preserve everything else
+            const fixedKey = privateKey.replace(/\\n/g, '\n');
+            
+            // Verify the key looks correct
+            const lines = fixedKey.split('\n');
+            console.log(chalk.blue(`📊 Key has ${lines.length} lines after processing`));
+            
+            return fixedKey;
+        }
+        
+        // If key doesn't have proper format, try to fix it
+        console.log(chalk.yellow('⚠️ Key missing proper PEM headers, attempting to fix...'));
+        let formattedKey = privateKey.replace(/\\n/g, '\n').trim();
+        
+        // Add headers if missing
+        if (!formattedKey.startsWith('-----BEGIN PRIVATE KEY-----')) {
             formattedKey = '-----BEGIN PRIVATE KEY-----\n' + formattedKey;
         }
-        if (!formattedKey.includes('END PRIVATE KEY')) {
+        if (!formattedKey.endsWith('-----END PRIVATE KEY-----')) {
             formattedKey = formattedKey + '\n-----END PRIVATE KEY-----';
         }
-        
-        // Ensure proper line breaks (64 chars per line for PEM format)
-        formattedKey = formattedKey.replace(/(.{64})/g, '$1\n');
         
         return formattedKey;
     }
@@ -122,6 +135,10 @@ class FirebaseManager {
                 return;
             } else {
                 console.log(chalk.yellow(`⚠️ Connection test ${i + 1}/3 failed: ${result.error}`));
+                if (result.error.includes('UNAUTHENTICATED') || result.error.includes('Failed to parse private key')) {
+                    console.log(chalk.red('🔑 Authentication issue detected. Check your private key format.'));
+                    break;
+                }
                 if (i < 2) {
                     console.log(chalk.blue('🔄 Retrying in 3 seconds...'));
                     await new Promise(resolve => setTimeout(resolve, 3000));
@@ -149,21 +166,9 @@ class FirebaseManager {
             return {
                 success: false,
                 error: error.message,
-                code: error.code,
-                details: this.getErrorDetails(error)
+                code: error.code
             };
         }
-    }
-
-    getErrorDetails(error) {
-        if (error.code === 16) { // UNAUTHENTICATED
-            return 'Authentication failed. Check your service account credentials and ensure the key is properly formatted.';
-        } else if (error.code === 7) { // PERMISSION_DENIED
-            return 'Permission denied. Ensure your service account has proper Firestore permissions.';
-        } else if (error.code === 13) { // INTERNAL
-            return 'Internal Firebase error. Try again later.';
-        }
-        return 'Unknown error. Check your Firebase configuration.';
     }
 
     handleConnectionError(error) {
@@ -192,14 +197,6 @@ class FirebaseManager {
             connectionAttempts: this.connectionAttempts,
             timestamp: new Date().toISOString()
         };
-    }
-
-    async reconnect() {
-        console.log(chalk.blue('🔄 Reconnecting to Firebase...'));
-        this.connectionAttempts = 0;
-        this.init();
-        await new Promise(resolve => setTimeout(resolve, 3000));
-        return this.testConnection();
     }
 }
 
