@@ -1,8 +1,8 @@
 const admin = require('firebase-admin');
 const fs = require('fs-extra');
-const chalk = require('chalk');
-const fetch = require('node-fetch');
 const path = require('path');
+const chalk = require('chalk');
+
 class FirebaseManager {
     constructor() {
         this.db = null;
@@ -17,17 +17,54 @@ class FirebaseManager {
         try {
             console.log(chalk.blue('🔥 Initializing Firebase...'));
             
-            // Check if service account file exists
-            if (!fs.existsSync('./firebase-key.json')) {
-                console.log(chalk.red('❌ firebase-key.json not found!'));
+            // Try different possible file locations
+            const possiblePaths = [
+                './firebase-key.json',
+                './system/firebase-key.json', 
+                '../firebase-key.json',
+                'firebase-key.json',
+                path.join(__dirname, 'firebase-key.json'),
+                path.join(__dirname, '../firebase-key.json'),
+                path.join(__dirname, '../../firebase-key.json')
+            ];
+
+            let serviceAccountPath = null;
+            let serviceAccount = null;
+
+            // Find the file
+            for (const filePath of possiblePaths) {
+                if (fs.existsSync(filePath)) {
+                    serviceAccountPath = filePath;
+                    console.log(chalk.green(`📁 Found firebase-key.json at: ${filePath}`));
+                    break;
+                }
+            }
+
+            if (!serviceAccountPath) {
+                console.log(chalk.red('❌ firebase-key.json not found in any common locations!'));
+                console.log(chalk.yellow('🔍 Searching for JSON files...'));
+                
+                // List all JSON files to help debug
+                const jsonFiles = this.findJSONFiles();
+                if (jsonFiles.length > 0) {
+                    console.log(chalk.yellow('📄 Found JSON files:'), jsonFiles);
+                }
+                
                 return;
             }
 
-            const serviceAccount = require('./firebase-key.json');
-            
+            try {
+                serviceAccount = require(serviceAccountPath);
+                console.log(chalk.green('✅ firebase-key.json loaded successfully'));
+            } catch (parseError) {
+                console.log(chalk.red('❌ Error parsing firebase-key.json:'), parseError.message);
+                return;
+            }
+
             // Validate service account
             if (!serviceAccount.project_id || !serviceAccount.private_key || !serviceAccount.client_email) {
                 console.log(chalk.red('❌ Invalid firebase-key.json structure'));
+                console.log(chalk.yellow('📋 File content:'), JSON.stringify(serviceAccount, null, 2));
                 return;
             }
 
@@ -61,6 +98,29 @@ class FirebaseManager {
             console.log(chalk.red('❌ Firebase initialization failed:'), error.message);
             this.handleConnectionError(error);
         }
+    }
+
+    findJSONFiles() {
+        const searchPaths = ['.', './system', '../'];
+        const jsonFiles = [];
+        
+        for (const searchPath of searchPaths) {
+            try {
+                if (fs.existsSync(searchPath)) {
+                    const files = fs.readdirSync(searchPath);
+                    const jsonFilesInPath = files.filter(file => 
+                        file.endsWith('.json') && 
+                        !file.includes('node_modules') &&
+                        !file.includes('package-lock')
+                    );
+                    jsonFiles.push(...jsonFilesInPath.map(file => path.join(searchPath, file)));
+                }
+            } catch (error) {
+                // Skip inaccessible directories
+            }
+        }
+        
+        return jsonFiles;
     }
 
     async testConnection() {
@@ -119,6 +179,17 @@ class FirebaseManager {
         this.init();
         await new Promise(resolve => setTimeout(resolve, 3000));
         return this.testConnection();
+    }
+
+    // Method to manually set file path
+    setConfigPath(filePath) {
+        if (fs.existsSync(filePath)) {
+            console.log(chalk.green(`📁 Using custom config path: ${filePath}`));
+            this.serviceAccountPath = filePath;
+            this.init();
+        } else {
+            console.log(chalk.red(`❌ File not found: ${filePath}`));
+        }
     }
 }
 
