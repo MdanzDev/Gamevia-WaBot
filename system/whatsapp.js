@@ -1229,6 +1229,66 @@ module.exports = rikz = async (rikz, m, chatUpdate, store) => {
                 }, { quoted: m });
                 break;
 
+
+                case 'fixfirebase':
+    try {
+        const { db } = require('./firebase');
+        
+        // Create default pricing
+        const defaultPricing = {
+            regular_markup: 20,
+            reseller_markup: 8,
+            registration_fee: 5,
+            min_topup: 1
+        };
+        
+        await db.collection('settings').doc('pricing').set(defaultPricing);
+        
+        // Create test user
+        await db.collection('users').doc(m.sender).set({
+            name: m.pushName,
+            role: 'user',
+            status: 'active',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+        });
+        
+        rikz.sendMessage(m.chat, { 
+            text: `✅ Firebase Fixed!\n\nDefault pricing created and test user added.\n\nNow try .testfirebase again.` 
+        }, { quoted: m });
+        
+    } catch (error) {
+        rikz.sendMessage(m.chat, { text: `❌ Fix failed: ${error.message}` }, { quoted: m });
+    }
+    break;
+
+case 'checkfirestore':
+    try {
+        const { db } = require('./firebase');
+        
+        // Test basic write/read
+        const testRef = db.collection('test').doc('connection');
+        await testRef.set({
+            message: 'Firestore is working!',
+            timestamp: new Date().toISOString()
+        });
+        
+        const testDoc = await testRef.get();
+        
+        const resultText = testDoc.exists ? 
+            `✅ Firestore is WORKING!\n\nTest document created and read successfully.` :
+            `❌ Firestore read failed after write.`;
+            
+        rikz.sendMessage(m.chat, { text: resultText }, { quoted: m });
+        
+    } catch (error) {
+        rikz.sendMessage(m.chat, { 
+            text: `❌ Firestore connection failed:\n\n${error.message}` 
+        }, { quoted: m });
+    }
+    break;
+                
+
             case 'promo':
             case 'promotions':
                 const promoText = `🎊 *Current Promotions* 🎊
