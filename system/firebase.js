@@ -48,32 +48,37 @@ class FirebaseManager {
             console.log(chalk.green(`📁 Project: ${serviceAccount.project_id}`));
             console.log(chalk.green(`📧 Client: ${serviceAccount.client_email}`));
 
-            // Fix private key format
-            if (serviceAccount.private_key) {
-                serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
-            }
+            // FIX: Properly format the private key
+            console.log(chalk.blue('🔧 Formatting private key...'));
+            serviceAccount.private_key = this.formatPrivateKey(serviceAccount.private_key);
+            
+            // Log private key info (first/last chars for debugging)
+            const pk = serviceAccount.private_key;
+            console.log(chalk.blue(`🔑 Private key: ${pk.length} chars`));
+            console.log(chalk.blue(`🔑 Starts with: ${pk.substring(0, 30)}...`));
+            console.log(chalk.blue(`🔑 Ends with: ...${pk.substring(pk.length - 30)}`));
 
             // Initialize Firebase
             if (admin.apps.length === 0) {
                 console.log(chalk.blue('📦 Creating new Firebase app instance...'));
-                admin.initializeApp({
-                    credential: admin.credential.cert(serviceAccount),
-                    databaseURL: `https://${serviceAccount.project_id}.firebaseio.com`
-                });
+                try {
+                    admin.initializeApp({
+                        credential: admin.credential.cert(serviceAccount),
+                        databaseURL: `https://${serviceAccount.project_id}.firebaseio.com`
+                    });
+                    console.log(chalk.green('✅ Firebase app initialized'));
+                } catch (initError) {
+                    console.log(chalk.red('❌ Firebase app initialization failed:'), initError.message);
+                    return;
+                }
             }
 
             this.db = admin.firestore();
             console.log(chalk.green('✅ Firestore database instance created'));
             
-            // Test connection
+            // Test connection with better error handling
             setTimeout(async () => {
-                const result = await this.testConnection();
-                if (result.success) {
-                    this.isConnected = true;
-                    console.log(chalk.green('🎉 Firebase connected successfully!'));
-                } else {
-                    console.log(chalk.yellow('⚠️ Firebase connection test failed:'), result.error);
-                }
+                await this.testConnectionWithRetry();
             }, 2000);
             
         } catch (error) {
@@ -82,12 +87,58 @@ class FirebaseManager {
         }
     }
 
+    formatPrivateKey(privateKey) {
+        if (!privateKey) return privateKey;
+        
+        // Remove any existing formatting and ensure proper PEM format
+        let formattedKey = privateKey
+            .replace(/\\n/g, '\n')  // Replace escaped newlines
+            .replace(/"/g, '')      // Remove quotes if present
+            .trim();
+        
+        // Ensure it has proper BEGIN/END headers
+        if (!formattedKey.includes('BEGIN PRIVATE KEY')) {
+            formattedKey = '-----BEGIN PRIVATE KEY-----\n' + formattedKey;
+        }
+        if (!formattedKey.includes('END PRIVATE KEY')) {
+            formattedKey = formattedKey + '\n-----END PRIVATE KEY-----';
+        }
+        
+        // Ensure proper line breaks (64 chars per line for PEM format)
+        formattedKey = formattedKey.replace(/(.{64})/g, '$1\n');
+        
+        return formattedKey;
+    }
+
+    async testConnectionWithRetry() {
+        console.log(chalk.blue('🔗 Testing Firebase connection...'));
+        
+        for (let i = 0; i < 3; i++) {
+            const result = await this.testConnection();
+            if (result.success) {
+                this.isConnected = true;
+                console.log(chalk.green('🎉 Firebase connected successfully!'));
+                console.log(chalk.blue(`📁 Available collections: ${result.collections?.join(', ') || 'None'}`));
+                return;
+            } else {
+                console.log(chalk.yellow(`⚠️ Connection test ${i + 1}/3 failed: ${result.error}`));
+                if (i < 2) {
+                    console.log(chalk.blue('🔄 Retrying in 3 seconds...'));
+                    await new Promise(resolve => setTimeout(resolve, 3000));
+                }
+            }
+        }
+        
+        console.log(chalk.red('💥 All connection attempts failed'));
+    }
+
     async testConnection() {
         if (!this.db) {
             return { success: false, error: 'Database not initialized' };
         }
         
         try {
+            // Simple test - list collections
             const collections = await this.db.listCollections();
             return {
                 success: true,
@@ -98,9 +149,21 @@ class FirebaseManager {
             return {
                 success: false,
                 error: error.message,
-                code: error.code
+                code: error.code,
+                details: this.getErrorDetails(error)
             };
         }
+    }
+
+    getErrorDetails(error) {
+        if (error.code === 16) { // UNAUTHENTICATED
+            return 'Authentication failed. Check your service account credentials and ensure the key is properly formatted.';
+        } else if (error.code === 7) { // PERMISSION_DENIED
+            return 'Permission denied. Ensure your service account has proper Firestore permissions.';
+        } else if (error.code === 13) { // INTERNAL
+            return 'Internal Firebase error. Try again later.';
+        }
+        return 'Unknown error. Check your Firebase configuration.';
     }
 
     handleConnectionError(error) {
@@ -108,7 +171,7 @@ class FirebaseManager {
         console.log(chalk.yellow(`🔄 Connection attempt ${this.connectionAttempts}/${this.maxRetries}`));
         
         if (this.connectionAttempts < this.maxRetries) {
-            setTimeout(() => this.init(), 3000);
+            setTimeout(() => this.init(), 5000);
         }
     }
 
@@ -129,6 +192,14 @@ class FirebaseManager {
             connectionAttempts: this.connectionAttempts,
             timestamp: new Date().toISOString()
         };
+    }
+
+    async reconnect() {
+        console.log(chalk.blue('🔄 Reconnecting to Firebase...'));
+        this.connectionAttempts = 0;
+        this.init();
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        return this.testConnection();
     }
 }
 
