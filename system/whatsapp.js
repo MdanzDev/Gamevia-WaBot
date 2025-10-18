@@ -1448,6 +1448,27 @@ Use *.price* to explore all games!`;
     }
     break;
 
+                case 'initfirebase':
+    try {
+        // Ensure settings exist
+        const pricing = await db.ensureSettings();
+        
+        // Create current user
+        await db.createUser(m.sender, {
+            name: m.pushName,
+            role: 'user',
+            status: 'active'
+        });
+        
+        const resultText = `✅ Firebase Initialized!\n\n📊 Pricing Settings:\n- Regular Markup: ${pricing.regular_markup}%\n- Reseller Markup: ${pricing.reseller_markup}%\n- Registration Fee: RM${pricing.registration_fee}\n- Min Topup: RM${pricing.min_topup}\n\n👤 Your user account created!`;
+        
+        rikz.sendMessage(m.chat, { text: resultText }, { quoted: m });
+        
+    } catch (error) {
+        rikz.sendMessage(m.chat, { text: `❌ Init failed: ${error.message}` }, { quoted: m });
+    }
+    break;
+
             case 'history':
                 let historyText = "";
                 if(resellers[m.sender]){
