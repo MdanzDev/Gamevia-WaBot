@@ -1367,196 +1367,126 @@ Use *.price* to explore all games!`;
 
 case 'testfirebase':
     try {
-        console.log('🧪 Starting comprehensive Firebase test...');
+        console.log('🧪 Testing Firebase connection...');
         
-        // Test 1: Connection status
-        const connectionInfo = db.getConnectionInfo();
-        console.log('Connection Info:', connectionInfo);
+        // Test basic connection
+        const connectionTest = await firebaseManager.testConnection();
+        const connectionStatus = firebaseManager.getConnectionStatus();
 
-        // Test 2: Detailed connection test
-        const connectionTest = await firebaseManager.testConnection(true);
-        console.log('Connection Test:', connectionTest);
+        let resultText = `🔥 *Firebase Connection Test* 🔥\n\n`;
 
-        if (!connectionTest.success) {
-            return rikz.sendMessage(m.chat, { 
-                text: `❌ *Firebase Connection Failed* 🔴\n\n*Error:* ${connectionTest.error}\n*Code:* ${connectionTest.code || 'N/A'}\n\n💡 Try .fixfirebase to reconnect` 
-            }, { quoted: m });
-        }
-
-        // Test 3: User operations
-        const userExists = await db.userExists(m.sender);
-        console.log(`User exists: ${userExists}`);
-
-        let userResult = { success: false };
-        if (!userExists) {
-            userResult = await db.createUser(m.sender, {
-                name: m.pushName,
-                role: 'user',
-                status: 'active',
-                phone: m.sender,
-                registeredVia: 'whatsapp_bot'
-            });
+        if (connectionTest.success) {
+            resultText += `✅ *Status:* CONNECTED\n`;
+            resultText += `📁 *Collections:* ${connectionTest.collections?.join(', ') || 'None'}\n`;
+            resultText += `🔄 *Attempts:* ${connectionStatus.connectionAttempts}\n\n`;
+            
+            // Test database operations if connected
+            try {
+                const userExists = await db.userExists(m.sender);
+                resultText += `👤 *User Check:* ${userExists ? 'EXISTS' : 'NOT FOUND'}\n`;
+                
+                if (!userExists) {
+                    await db.createUser(m.sender, {
+                        name: m.pushName,
+                        role: 'user',
+                        status: 'active'
+                    });
+                    resultText += `✅ *User Created:* YES\n`;
+                }
+                
+                const pricing = await db.getPricing();
+                resultText += `💰 *Pricing:* ${pricing ? 'LOADED' : 'NOT FOUND'}\n`;
+                
+                resultText += `\n🎯 *All Systems Operational!* 🚀`;
+                
+            } catch (dbError) {
+                resultText += `\n⚠️ *Database Operations:* Some operations failed\n`;
+                resultText += `💡 *Error:* ${dbError.message}\n`;
+            }
+            
         } else {
-            const userData = await db.getUser(m.sender);
-            userResult = { success: true, action: 'exists', data: userData };
+            resultText += `❌ *Status:* DISCONNECTED\n`;
+            resultText += `🔴 *Error:* ${connectionTest.error}\n`;
+            resultText += `📟 *Code:* ${connectionTest.code || 'N/A'}\n\n`;
+            resultText += `💡 *Solution:* Check firebase-key.json and use .fixfirebase`;
         }
-
-        // Test 4: Pricing operations
-        const pricing = await db.getPricing();
-        
-        // Test 5: System stats
-        const systemStats = await db.getSystemStats();
-
-        const resultText = `🔥 *Firebase Comprehensive Test Results* 🔥
-
-📡 *Connection Status:*
-✅ Connected: ${connectionInfo.isConnected ? 'YES' : 'NO'}
-🔄 Attempts: ${connectionInfo.connectionAttempts}
-📁 Collections: ${connectionTest.collections?.join(', ') || 'None'}
-
-👤 *User Operations:*
-✅ User Check: ${userExists ? 'EXISTS' : 'NEW'}
-✅ User Action: ${userResult.action || 'N/A'}
-✅ User Name: ${userResult.data?.name || 'N/A'}
-✅ User Role: ${userResult.data?.role || 'N/A'}
-
-💰 *Pricing System:*
-✅ Loaded: ${pricing ? 'YES' : 'NO'}
-📊 Regular Markup: ${pricing?.regular_markup || 'N/A'}%
-📊 Reseller Markup: ${pricing?.reseller_markup || 'N/A'}%
-💵 Min Topup: RM${pricing?.min_topup || 'N/A'}
-
-📈 *System Stats:*
-👥 Total Users: ${systemStats?.totalUsers || 'N/A'}
-🛒 Total Orders: ${systemStats?.totalOrders || 'N/A'}
-✅ Success Rate: ${systemStats?.successRate || 'N/A'}%
-💰 Total Revenue: RM${systemStats?.totalRevenue || '0'}
-
-🎯 *Status:* Firebase is fully operational! 🚀`;
 
         rikz.sendMessage(m.chat, { text: resultText }, { quoted: m });
         
     } catch (error) {
-        console.error('❌ Comprehensive test error:', error);
+        console.error('Test error:', error);
         rikz.sendMessage(m.chat, { 
-            text: `❌ *Comprehensive Test Failed* 💥\n\n*Error:* ${error.message}\n\n*Stack:* ${error.stack}` 
+            text: `❌ *Test Failed* 💥\n\n*Error:* ${error.message}\n\n*Ensure:* firebase-key.json exists and is valid` 
         }, { quoted: m });
     }
     break;
 
-case 'initfirebase':
+case 'fixfirebase':
     try {
-        console.log('🚀 Initializing Firebase with full setup...');
+        console.log('🛠️ Fixing Firebase connection...');
         
-        // Test connection first
-        const connectionTest = await firebaseManager.testConnection(true);
-        if (!connectionTest.success) {
-            return rikz.sendMessage(m.chat, { 
-                text: `❌ *Cannot Initialize* 🔴\n\nFirebase connection failed:\n${connectionTest.error}\n\nUse .fixfirebase first` 
+        // Clear require cache
+        delete require.cache[require.resolve('./firebase')];
+        delete require.cache[require.resolve('./database')];
+        if (require.cache[require.resolve('./firebase-key.json')]) {
+            delete require.cache[require.resolve('./firebase-key.json')];
+        }
+        
+        // Re-import
+        const FirebaseManager = require('./firebase');
+        const FirebaseDB = require('./database');
+        
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        const reconnectResult = await FirebaseManager.reconnect();
+        
+        if (reconnectResult.success) {
+            rikz.sendMessage(m.chat, { 
+                text: `✅ *Firebase Fixed!* 🔧\n\nReconnected successfully!\nCollections: ${reconnectResult.collections?.length || 0} available\n\nTry .testfirebase again.` 
+            }, { quoted: m });
+        } else {
+            rikz.sendMessage(m.chat, { 
+                text: `❌ *Fix Failed* 🔴\n\nError: ${reconnectResult.error}\n\n*Check:*\n1. firebase-key.json exists\n2. Private key format is correct\n3. Project ID matches` 
             }, { quoted: m });
         }
-
-        // Step 1: Ensure pricing settings
-        console.log('⚙️ Step 1: Ensuring pricing settings...');
-        const pricing = await db.ensureSettings();
-        
-        // Step 2: Create/update user
-        console.log('👤 Step 2: Setting up user account...');
-        const userResult = await db.createUser(m.sender, {
-            name: m.pushName,
-            role: 'user',
-            status: 'active',
-            phone: m.sender,
-            registeredVia: 'whatsapp_bot',
-            initialization: 'full_setup'
-        });
-
-        // Step 3: Create sample order to test order system
-        console.log('🛒 Step 3: Testing order system...');
-        const sampleOrder = {
-            id: `test_${Date.now()}`,
-            userId: m.sender,
-            gameSlug: 'mlbb',
-            product: 'diamond_5',
-            user_id: '12345',
-            zone_id: '1',
-            price: 5.00,
-            status: 'success',
-            description: 'Initialization test order'
-        };
-        
-        const orderResult = await db.createOrder(sampleOrder);
-
-        // Step 4: Create backup
-        console.log('💾 Step 4: Creating initial backup...');
-        const backupResult = await db.backupData();
-
-        const resultText = `✅ *Firebase Full Initialization Complete!* 🎉
-
-📊 *Settings Configured:*
-• Regular Markup: ${pricing.regular_markup}%
-• Reseller Markup: ${pricing.reseller_markup}%
-• Registration Fee: RM${pricing.registration_fee}
-• Min Topup: RM${pricing.min_topup}
-• Regional Adjustments: MY:${pricing.malaysia_adjustment}x, ID:${pricing.indonesia_adjustment}x
-
-👤 *User Account:*
-• Action: ${userResult.action}
-• Name: ${userResult.data?.name}
-• Role: ${userResult.data?.role}
-• Status: ${userResult.data?.status}
-
-🛒 *Order System:*
-• Test Order: ${orderResult.success ? 'CREATED' : 'FAILED'}
-• Order ID: ${orderResult.orderId}
-
-💾 *Backup System:*
-• Backup: ${backupResult.success ? 'CREATED' : 'FAILED'}
-• Backup ID: ${backupResult.backupId}
-
-🎯 *All Systems Ready for Production!* 🚀`;
-
-        rikz.sendMessage(m.chat, { text: resultText }, { quoted: m });
         
     } catch (error) {
-        console.error('❌ Full initialization error:', error);
         rikz.sendMessage(m.chat, { 
-            text: `❌ *Initialization Failed* 💥\n\n*Error:* ${error.message}\n\n*Step:* Check Firebase configuration` 
+            text: `💥 *Fix Error*\n\n${error.message}\n\n*Restart the bot completely.*` 
         }, { quoted: m });
     }
     break;
 
 case 'firebasestats':
     try {
-        const connectionInfo = db.getConnectionInfo();
-        const systemStats = await db.getSystemStats();
-        const pricing = await db.getPricing();
-
-        const statsText = `📊 *Firebase Live Statistics* 📊
-
-🔗 *Connection:*
-✅ Status: ${connectionInfo.isConnected ? 'CONNECTED' : 'DISCONNECTED'}
-🔄 Attempts: ${connectionInfo.connectionAttempts}
-⏰ Last Check: ${new Date(connectionInfo.timestamp).toLocaleTimeString()}
-
-👥 *User Statistics:*
-• Total Users: ${systemStats?.totalUsers || 0}
-• Active Users: ${systemStats?.totalUsers || 0} (all)
-
-🛒 *Order Statistics:*
-• Total Orders: ${systemStats?.totalOrders || 0}
-• Successful: ${systemStats?.successfulOrders || 0}
-• Pending: ${systemStats?.pendingOrders || 0}
-• Success Rate: ${systemStats?.successRate || 0}%
-
-💰 *Financials:*
-• Total Revenue: RM${systemStats?.totalRevenue?.toFixed(2) || '0.00'}
-• Avg Order: RM${systemStats?.totalOrders > 0 ? (systemStats.totalRevenue / systemStats.totalOrders).toFixed(2) : '0.00'}
-
-⚙️ *Pricing Settings:*
-• Markup: ${pricing?.regular_markup || 0}% Regular, ${pricing?.reseller_markup || 0}% Reseller
-• Min Topup: RM${pricing?.min_topup || 0}
-• Fees: RM${pricing?.registration_fee || 0} Registration`;
+        const connectionStatus = firebaseManager.getConnectionStatus();
+        const connectionTest = await firebaseManager.testConnection();
+        
+        let statsText = `📊 *Firebase Status*\n\n`;
+        statsText += `🔗 *Connection:* ${connectionStatus.isConnected ? '✅ CONNECTED' : '❌ DISCONNECTED'}\n`;
+        statsText += `🔄 *Attempts:* ${connectionStatus.connectionAttempts}\n`;
+        
+        if (connectionTest.success) {
+            statsText += `📁 *Collections:* ${connectionTest.collections?.join(', ') || 'None'}\n\n`;
+            
+            try {
+                const userExists = await db.userExists(m.sender);
+                statsText += `👤 *Your Status:* ${userExists ? 'REGISTERED' : 'NOT REGISTERED'}\n`;
+                
+                if (userExists) {
+                    const user = await db.getUser(m.sender);
+                    statsText += `📛 *Name:* ${user?.name || 'N/A'}\n`;
+                    statsText += `🎯 *Role:* ${user?.role || 'N/A'}\n`;
+                }
+                
+            } catch (dbError) {
+                statsText += `⚠️ *User Data:* Temporarily unavailable\n`;
+            }
+            
+        } else {
+            statsText += `🔴 *Last Error:* ${connectionTest.error}\n`;
+            statsText += `💡 *Action:* Use .fixfirebase to reconnect\n`;
+        }
 
         rikz.sendMessage(m.chat, { text: statsText }, { quoted: m });
         
@@ -1567,58 +1497,32 @@ case 'firebasestats':
     }
     break;
 
-case 'fixfirebase':
+case 'initfirebase':
     try {
-        console.log('🛠️ Starting comprehensive Firebase repair...');
+        const connectionTest = await firebaseManager.testConnection();
         
-        // Clear cache
-        delete require.cache[require.resolve('./firebase')];
-        delete require.cache[require.resolve('./database')];
-        delete require.cache[require.resolve('./firebase-key.json')];
-        
-        // Reinitialize
-        const FirebaseManager = require('./firebase');
-        const FirebaseDB = require('./database');
-        
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        const reconnectResult = await FirebaseManager.reconnect();
-        
-        if (reconnectResult.success) {
-            rikz.sendMessage(m.chat, { 
-                text: `✅ *Firebase Repair Successful!* 🔧\n\nConnection reestablished with ${reconnectResult.collections?.length || 0} collections available.\n\nUse .testfirebase to verify full functionality.` 
-            }, { quoted: m });
-        } else {
-            rikz.sendMessage(m.chat, { 
-                text: `❌ *Repair Failed* 🔴\n\nFailed to reconnect: ${reconnectResult.error}\n\nPlease check your firebase-key.json configuration.` 
+        if (!connectionTest.success) {
+            return rikz.sendMessage(m.chat, { 
+                text: `❌ *Cannot Initialize*\n\nFirebase not connected:\n${connectionTest.error}\n\nUse .fixfirebase first` 
             }, { quoted: m });
         }
-        
-    } catch (error) {
-        rikz.sendMessage(m.chat, { 
-            text: `💥 *Repair Critical Error*\n\n${error.message}\n\nPlease restart the bot completely.` 
-        }, { quoted: m });
-    }
-    break;
 
-case 'backupdata':
-    try {
-        rikz.sendMessage(m.chat, { text: '💾 Starting data backup...' }, { quoted: m });
+        // Simple initialization
+        await db.createUser(m.sender, {
+            name: m.pushName,
+            role: 'user',
+            status: 'active'
+        });
+
+        const pricing = await db.getPricing();
         
-        const backupResult = await db.backupData();
+        rikz.sendMessage(m.chat, { 
+            text: `✅ *Firebase Ready!*\n\n👤 User account created\n💰 Pricing: ${pricing ? 'LOADED' : 'DEFAULT'}\n🔗 Connection: ACTIVE\n\nReady to use! 🚀` 
+        }, { quoted: m });
         
-        if (backupResult.success) {
-            rikz.sendMessage(m.chat, { 
-                text: `✅ *Backup Completed!* 📦\n\nBackup ID: ${backupResult.backupId}\n\nAll user data, orders, and settings have been securely backed up.` 
-            }, { quoted: m });
-        } else {
-            rikz.sendMessage(m.chat, { 
-                text: `❌ Backup failed. Please check Firebase connection.` 
-            }, { quoted: m });
-        }
     } catch (error) {
         rikz.sendMessage(m.chat, { 
-            text: `❌ Backup error: ${error.message}` 
+            text: `❌ Init failed: ${error.message}` 
         }, { quoted: m });
     }
     break;
