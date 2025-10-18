@@ -1,5 +1,5 @@
 const admin = require('firebase-admin');
-
+const chalk = require('chalk');
 class FirebaseManager {
     constructor() {
         this.db = null;
