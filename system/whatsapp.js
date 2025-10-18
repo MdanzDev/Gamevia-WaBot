@@ -53,7 +53,7 @@ const apiCall = async (endpoint, body = null) => {
 
 const API_KEY = "API-GVCDEAD0E38EA13632";
 const API_BASE_URL = "https://api.gamevia.shop/v1";
-
+const firebaseManager = require('./firebase'); // ADD THIS LINE
 const db = require('./database');
 
 
