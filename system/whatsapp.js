@@ -1287,7 +1287,27 @@ case 'checkfirestore':
         }, { quoted: m });
     }
     break;
-                
+
+
+                case 'checkfirestore':
+    try {
+        const { db } = require('./firebase');
+        
+        // Test simple Firestore operation
+        const testDoc = await db.collection('test').doc('connection').get();
+        
+        // List all collections
+        const collections = await db.listCollections();
+        const collectionNames = collections.map(col => col.id);
+        
+        const resultText = `🔧 Firestore Check:\n\n✅ Connection: SUCCESS\n📁 Collections: ${collectionNames.join(', ') || 'None'}\n📊 Test Document: ${testDoc.exists ? 'EXISTS' : 'MISSING'}`;
+
+        rikz.sendMessage(m.chat, { text: resultText }, { quoted: m });
+        
+    } catch (error) {
+        rikz.sendMessage(m.chat, { text: `❌ Firestore check failed: ${error.message}\n\n💡 This usually means:\n1. Firestore database not created\n2. Wrong region/location\n3. Permission issues` }, { quoted: m });
+    }
+    break;
 
             case 'promo':
             case 'promotions':
