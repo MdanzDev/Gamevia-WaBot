@@ -4,27 +4,43 @@ class FirebaseDB {
     // User Management
     async createUser(userId, userData) {
         try {
+            console.log(`📝 Creating user: ${userId}`);
             await db.collection('users').doc(userId).set({
                 ...userData,
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString()
             });
-            console.log('✅ User created:', userId);
+            console.log(`✅ User created successfully: ${userId}`);
             return true;
         } catch (error) {
-            console.error('Error creating user:', error);
+            console.error('❌ Error creating user:', error);
             return false;
         }
     }
 
     async getUser(userId) {
         try {
+            console.log(`🔍 Getting user: ${userId}`);
             const doc = await db.collection('users').doc(userId).get();
-            console.log('📖 Getting user:', userId, 'Exists:', doc.exists);
-            return doc.exists ? doc.data() : null;
+            const userData = doc.exists ? doc.data() : null;
+            console.log(`📊 User data:`, userData);
+            return userData;
         } catch (error) {
-            console.error('Error getting user:', error);
+            console.error('❌ Error getting user:', error);
             return null;
+        }
+    }
+
+    async updateUser(userId, updates) {
+        try {
+            await db.collection('users').doc(userId).update({
+                ...updates,
+                updatedAt: new Date().toISOString()
+            });
+            return true;
+        } catch (error) {
+            console.error('Error updating user:', error);
+            return false;
         }
     }
 
@@ -40,7 +56,6 @@ class FirebaseDB {
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString()
             });
-            console.log('✅ Reseller created:', userId);
             return true;
         } catch (error) {
             console.error('Error creating reseller:', error);
@@ -70,7 +85,6 @@ class FirebaseDB {
                 updatedAt: new Date().toISOString()
             });
             
-            console.log('💰 Balance updated:', userId, 'New balance:', newBalance);
             return newBalance;
         } catch (error) {
             console.error('Error updating balance:', error);
@@ -78,49 +92,25 @@ class FirebaseDB {
         }
     }
 
-    // Get pricing settings - FIXED VERSION
+    // Get pricing settings
     async getPricing() {
         try {
             const doc = await db.collection('settings').doc('pricing').get();
-            
-            // If pricing doesn't exist, create it
-            if (!doc.exists) {
-                console.log('📊 Creating default pricing...');
-                const defaultPricing = {
-                    regular_markup: 20,
-                    reseller_markup: 8,
-                    registration_fee: 5,
-                    min_topup: 1,
-                    createdAt: new Date().toISOString()
-                };
-                
-                await db.collection('settings').doc('pricing').set(defaultPricing);
-                return defaultPricing;
-            }
-            
-            console.log('📊 Pricing found:', doc.data());
-            return doc.data();
+            return doc.exists ? doc.data() : null;
         } catch (error) {
             console.error('Error getting pricing:', error);
-            // Return defaults if error
-            return {
-                regular_markup: 20,
-                reseller_markup: 8,
-                registration_fee: 5,
-                min_topup: 1
-            };
+            return null;
         }
     }
 
-    // Create settings if missing
-    async ensureSettings() {
+    // Check if user exists (simple version)
+    async userExists(userId) {
         try {
-            const pricing = await this.getPricing();
-            console.log('✅ Settings ensured');
-            return pricing;
+            const doc = await db.collection('users').doc(userId).get();
+            return doc.exists;
         } catch (error) {
-            console.error('Error ensuring settings:', error);
-            return null;
+            console.error('Error checking user:', error);
+            return false;
         }
     }
 }
