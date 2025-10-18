@@ -1,5 +1,8 @@
 const firebaseManager = require('./firebase');
-
+const fs = require('fs-extra');
+const chalk = require('chalk');
+const fetch = require('node-fetch');
+const path = require('path');
 class FirebaseDB {
     constructor() {
         this.db = null;
