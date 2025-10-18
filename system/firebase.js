@@ -1,5 +1,8 @@
 const admin = require('firebase-admin');
+const fs = require('fs-extra');
 const chalk = require('chalk');
+const fetch = require('node-fetch');
+const path = require('path');
 class FirebaseManager {
     constructor() {
         this.db = null;
