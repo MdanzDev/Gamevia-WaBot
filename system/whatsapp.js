@@ -1424,26 +1424,37 @@ Use *.price* to explore all games!`;
                 rikz.sendMessage(m.chat, { text: statsTextUser }, { quoted: m });
                 break;
 
-
-            case 'testfirebase':
+case 'testfirebase':
     try {
-        // Test creating a user
-        const userCreated = await db.createUser(m.sender, {
-            name: m.pushName,
-            role: 'user',
-            status: 'active'
-        });
+        console.log('🧪 Starting Firebase test...');
+        
+        // Check if user already exists first
+        const userExists = await db.userExists(m.sender);
+        console.log(`📊 User exists: ${userExists}`);
+        
+        let userCreated = false;
+        if (!userExists) {
+            userCreated = await db.createUser(m.sender, {
+                name: m.pushName,
+                role: 'user',
+                status: 'active'
+            });
+            console.log(`📝 User creation result: ${userCreated}`);
+        }
         
         // Test getting the user
         const user = await db.getUser(m.sender);
+        console.log(`📋 User data retrieved:`, user);
         
         // Test getting pricing
         const pricing = await db.getPricing();
-        
-        const resultText = `🔥 Firebase Test Results:\n\n✅ User Created: ${userCreated}\n✅ User Data: ${user ? 'Found' : 'Not found'}\n✅ Pricing: ${pricing ? 'Loaded' : 'Not found'}\n\n📊 Pricing Settings:\nRegular Markup: ${pricing?.regular_markup || 'N/A'}%\nReseller Markup: ${pricing?.reseller_markup || 'N/A'}%\nRegistration Fee: RM${pricing?.registration_fee || 'N/A'}`;
+        console.log(`💰 Pricing data:`, pricing);
+
+        const resultText = `🔥 Firebase Test Results:\n\n✅ User Exists: ${userExists}\n✅ User Created: ${userCreated}\n✅ User Data: ${user ? 'FOUND' : 'NOT FOUND'}\n✅ Pricing: ${pricing ? 'LOADED' : 'NOT FOUND'}\n\n📊 User Details:\nName: ${user?.name || 'N/A'}\nRole: ${user?.role || 'N/A'}\nStatus: ${user?.status || 'N/A'}`;
 
         rikz.sendMessage(m.chat, { text: resultText }, { quoted: m });
     } catch (error) {
+        console.error('❌ Test error:', error);
         rikz.sendMessage(m.chat, { text: `❌ Firebase test failed: ${error.message}` }, { quoted: m });
     }
     break;
