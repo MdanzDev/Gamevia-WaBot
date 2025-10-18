@@ -17,44 +17,31 @@ class FirebaseManager {
         try {
             console.log(chalk.blue('🔥 Initializing Firebase...'));
             
-            // Try different possible file locations
-            const possiblePaths = [
-                './firebase-key.json',
-                './system/firebase-key.json', 
-                '../firebase-key.json',
-                'firebase-key.json',
-                path.join(__dirname, 'firebase-key.json'),
-                path.join(__dirname, '../firebase-key.json'),
-                path.join(__dirname, '../../firebase-key.json')
-            ];
-
-            let serviceAccountPath = null;
-            let serviceAccount = null;
-
-            // Find the file
-            for (const filePath of possiblePaths) {
-                if (fs.existsSync(filePath)) {
-                    serviceAccountPath = filePath;
-                    console.log(chalk.green(`📁 Found firebase-key.json at: ${filePath}`));
-                    break;
-                }
-            }
-
-            if (!serviceAccountPath) {
-                console.log(chalk.red('❌ firebase-key.json not found in any common locations!'));
-                console.log(chalk.yellow('🔍 Searching for JSON files...'));
+            // Your exact file location
+            const firebaseKeyPath = './firebase-key.json';
+            console.log(chalk.blue(`📁 Looking for: ${firebaseKeyPath}`));
+            console.log(chalk.blue(`📁 Current directory: ${process.cwd()}`));
+            
+            if (!fs.existsSync(firebaseKeyPath)) {
+                console.log(chalk.red('❌ firebase-key.json not found!'));
+                console.log(chalk.yellow('📋 Files in current directory:'));
                 
-                // List all JSON files to help debug
-                const jsonFiles = this.findJSONFiles();
-                if (jsonFiles.length > 0) {
-                    console.log(chalk.yellow('📄 Found JSON files:'), jsonFiles);
+                try {
+                    const files = fs.readdirSync('.');
+                    const jsonFiles = files.filter(f => f.endsWith('.json'));
+                    console.log(chalk.yellow('JSON files:'), jsonFiles);
+                    console.log(chalk.yellow('All files:'), files.slice(0, 10));
+                } catch (e) {
+                    console.log(chalk.red('Cannot read directory:', e.message));
                 }
-                
                 return;
             }
 
+            console.log(chalk.green('✅ firebase-key.json found!'));
+            
+            let serviceAccount;
             try {
-                serviceAccount = require(serviceAccountPath);
+                serviceAccount = require(firebaseKeyPath);
                 console.log(chalk.green('✅ firebase-key.json loaded successfully'));
             } catch (parseError) {
                 console.log(chalk.red('❌ Error parsing firebase-key.json:'), parseError.message);
@@ -62,65 +49,62 @@ class FirebaseManager {
             }
 
             // Validate service account
-            if (!serviceAccount.project_id || !serviceAccount.private_key || !serviceAccount.client_email) {
-                console.log(chalk.red('❌ Invalid firebase-key.json structure'));
-                console.log(chalk.yellow('📋 File content:'), JSON.stringify(serviceAccount, null, 2));
+            if (!serviceAccount.project_id) {
+                console.log(chalk.red('❌ Missing project_id in firebase-key.json'));
+                return;
+            }
+            if (!serviceAccount.private_key) {
+                console.log(chalk.red('❌ Missing private_key in firebase-key.json'));
+                return;
+            }
+            if (!serviceAccount.client_email) {
+                console.log(chalk.red('❌ Missing client_email in firebase-key.json'));
                 return;
             }
 
             console.log(chalk.green(`📁 Project: ${serviceAccount.project_id}`));
             console.log(chalk.green(`📧 Client: ${serviceAccount.client_email}`));
 
+            // Fix private key format if needed
+            if (serviceAccount.private_key && !serviceAccount.private_key.includes('BEGIN PRIVATE KEY')) {
+                console.log(chalk.yellow('⚠️ Private key format might be incorrect'));
+            }
+
             // Check if already initialized
             if (admin.apps.length === 0) {
                 console.log(chalk.blue('📦 Creating new Firebase app instance...'));
-                admin.initializeApp({
-                    credential: admin.credential.cert(serviceAccount),
-                    databaseURL: `https://${serviceAccount.project_id}.firebaseio.com`
-                });
+                try {
+                    admin.initializeApp({
+                        credential: admin.credential.cert(serviceAccount),
+                        databaseURL: `https://${serviceAccount.project_id}.firebaseio.com`
+                    });
+                    console.log(chalk.green('✅ Firebase app initialized'));
+                } catch (initError) {
+                    console.log(chalk.red('❌ Firebase app initialization failed:'), initError.message);
+                    return;
+                }
             }
 
             this.db = admin.firestore();
+            console.log(chalk.green('✅ Firestore database instance created'));
             
             // Test connection
-            this.testConnection().then(result => {
+            setTimeout(async () => {
+                const result = await this.testConnection();
                 if (result.success) {
                     this.isConnected = true;
                     console.log(chalk.green('🎉 Firebase connected successfully!'));
+                    console.log(chalk.blue(`📁 Available collections: ${result.collections?.join(', ') || 'None'}`));
                 } else {
-                    console.log(chalk.yellow('⚠️ Firebase connected but test failed'));
+                    console.log(chalk.yellow('⚠️ Firebase connection test failed:'), result.error);
                 }
-            }).catch(error => {
-                console.log(chalk.red('❌ Firebase connection test error:'), error.message);
-            });
+            }, 1000);
             
         } catch (error) {
             console.log(chalk.red('❌ Firebase initialization failed:'), error.message);
+            console.log(chalk.red('Stack:'), error.stack);
             this.handleConnectionError(error);
         }
-    }
-
-    findJSONFiles() {
-        const searchPaths = ['.', './system', '../'];
-        const jsonFiles = [];
-        
-        for (const searchPath of searchPaths) {
-            try {
-                if (fs.existsSync(searchPath)) {
-                    const files = fs.readdirSync(searchPath);
-                    const jsonFilesInPath = files.filter(file => 
-                        file.endsWith('.json') && 
-                        !file.includes('node_modules') &&
-                        !file.includes('package-lock')
-                    );
-                    jsonFiles.push(...jsonFilesInPath.map(file => path.join(searchPath, file)));
-                }
-            } catch (error) {
-                // Skip inaccessible directories
-            }
-        }
-        
-        return jsonFiles;
     }
 
     async testConnection() {
@@ -179,17 +163,6 @@ class FirebaseManager {
         this.init();
         await new Promise(resolve => setTimeout(resolve, 3000));
         return this.testConnection();
-    }
-
-    // Method to manually set file path
-    setConfigPath(filePath) {
-        if (fs.existsSync(filePath)) {
-            console.log(chalk.green(`📁 Using custom config path: ${filePath}`));
-            this.serviceAccountPath = filePath;
-            this.init();
-        } else {
-            console.log(chalk.red(`❌ File not found: ${filePath}`));
-        }
     }
 }
 
