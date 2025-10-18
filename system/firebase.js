@@ -12,119 +12,88 @@ class FirebaseManager {
 
     init() {
         try {
-            console.log('🔥 Initializing Firebase...');
+            console.log(chalk.blue('🔥 Initializing Firebase...'));
             
+            // Check if service account file exists
+            if (!fs.existsSync('./firebase-key.json')) {
+                console.log(chalk.red('❌ firebase-key.json not found!'));
+                return;
+            }
+
             const serviceAccount = require('./firebase-key.json');
             
+            // Validate service account
+            if (!serviceAccount.project_id || !serviceAccount.private_key || !serviceAccount.client_email) {
+                console.log(chalk.red('❌ Invalid firebase-key.json structure'));
+                return;
+            }
+
+            console.log(chalk.green(`📁 Project: ${serviceAccount.project_id}`));
+            console.log(chalk.green(`📧 Client: ${serviceAccount.client_email}`));
+
             // Check if already initialized
             if (admin.apps.length === 0) {
-                console.log('📦 Creating new Firebase app instance...');
+                console.log(chalk.blue('📦 Creating new Firebase app instance...'));
                 admin.initializeApp({
                     credential: admin.credential.cert(serviceAccount),
-                    databaseURL: `https://${serviceAccount.project_id}.firebaseio.com`,
-                    projectId: serviceAccount.project_id
+                    databaseURL: `https://${serviceAccount.project_id}.firebaseio.com`
                 });
-            } else {
-                console.log('🔄 Using existing Firebase app instance...');
             }
 
             this.db = admin.firestore();
             
-            // Enhanced Firestore settings
-            this.db.settings({
-                ignoreUndefinedProperties: true,
-                timeout: 30000,
-                maxIdleChannels: 5
-            });
-
-            // Test connection immediately
-            this.testConnection(true).then(result => {
+            // Test connection
+            this.testConnection().then(result => {
                 if (result.success) {
                     this.isConnected = true;
-                    this.connectionAttempts = 0;
-                    console.log('🎉 Firebase fully initialized and connected!');
-                    console.log(`📊 Project: ${serviceAccount.project_id}`);
-                    console.log(`📧 Client: ${serviceAccount.client_email}`);
+                    console.log(chalk.green('🎉 Firebase connected successfully!'));
                 } else {
-                    console.log('⚠️ Firebase initialized but connection test failed');
+                    console.log(chalk.yellow('⚠️ Firebase connected but test failed'));
                 }
+            }).catch(error => {
+                console.log(chalk.red('❌ Firebase connection test error:'), error.message);
             });
             
         } catch (error) {
-            console.log('❌ Firebase initialization failed:', error.message);
+            console.log(chalk.red('❌ Firebase initialization failed:'), error.message);
             this.handleConnectionError(error);
         }
     }
 
-    async testConnection(verbose = false) {
+    async testConnection() {
         if (!this.db) {
             return { success: false, error: 'Database not initialized' };
         }
         
         try {
-            if (verbose) console.log('🔍 Testing Firestore connection...');
-            
-            // Test 1: List collections
+            // Simple test - list collections
             const collections = await this.db.listCollections();
-            if (verbose) console.log(`📁 Available collections: ${collections.map(c => c.id).join(', ') || 'None'}`);
-            
-            // Test 2: Create and read a test document
-            const testRef = this.db.collection('connection_tests').doc('latest');
-            const testData = {
-                timestamp: this.admin.firestore.FieldValue.serverTimestamp(),
-                message: 'Connection test from GameVia Bot',
-                status: 'success'
-            };
-            
-            await testRef.set(testData);
-            if (verbose) console.log('✅ Test document written');
-            
-            const doc = await testRef.get();
-            if (verbose) console.log('✅ Test document read back');
-            
-            // Clean up test document
-            await testRef.delete();
-            if (verbose) console.log('✅ Test document cleaned up');
-            
-            this.isConnected = true;
             return {
                 success: true,
                 collections: collections.map(col => col.id),
-                testedAt: new Date().toISOString(),
-                message: 'Firestore is fully operational'
+                message: 'Firestore is connected and working'
             };
-            
         } catch (error) {
-            this.isConnected = false;
-            console.error('🔴 Connection test failed:', error.message);
             return {
                 success: false,
                 error: error.message,
-                code: error.code,
-                testedAt: new Date().toISOString()
+                code: error.code
             };
         }
     }
 
     handleConnectionError(error) {
         this.connectionAttempts++;
-        console.error(`🔥 Connection error (attempt ${this.connectionAttempts}):`, error.message);
+        console.log(chalk.yellow(`🔄 Connection attempt ${this.connectionAttempts}/${this.maxRetries}`));
         
         if (this.connectionAttempts < this.maxRetries) {
-            console.log(`🔄 Retrying connection in 5 seconds...`);
-            setTimeout(() => {
-                this.init();
-            }, 5000);
-        } else {
-            console.error('💥 Max connection attempts reached. Firebase is unavailable.');
-            this.db = null;
-            this.isConnected = false;
+            setTimeout(() => this.init(), 3000);
         }
     }
 
     getDB() {
         if (!this.db) {
-            throw new Error('Firebase database not available. Please check connection.');
+            throw new Error('Firebase not initialized');
         }
         return this.db;
     }
@@ -137,18 +106,14 @@ class FirebaseManager {
         return {
             isConnected: this.isConnected,
             connectionAttempts: this.connectionAttempts,
-            maxRetries: this.maxRetries,
             timestamp: new Date().toISOString()
         };
     }
 
-    // Reconnect method
     async reconnect() {
-        console.log('🔄 Attempting Firebase reconnection...');
+        console.log(chalk.blue('🔄 Reconnecting to Firebase...'));
         this.connectionAttempts = 0;
         this.init();
-        
-        // Wait for connection
         await new Promise(resolve => setTimeout(resolve, 3000));
         return this.testConnection();
     }
