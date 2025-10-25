@@ -30,62 +30,38 @@
     "fs-extra": "^11.1.1",
     "path": "^0.12.7",
     "crypto": "^1.0.1",
-    
-    // ==================== NEW DEPENDENCIES FOR FEATURES ====================
-    
-    // 🔐 Security & Authentication
     "jsonwebtoken": "^9.0.2",
     "bcryptjs": "^2.4.3",
     "rate-limiter-flexible": "^4.0.1",
-    
-    // 📊 Analytics & Charts
-    "chart.js": "^4.4.0",
+  "chart.js": "^4.4.0",
     "chartjs-node-canvas": "^4.1.6",
     "moment": "^2.29.4",
-    
-    // 💰 Payment & Finance
     "node-cron": "^3.0.2",
     "currency.js": "^2.0.4",
-    "accounting": "^0.4.1",
-    
-    // 📈 Data Processing
+    "accounting": "^0.4.1",   
     "csv-parser": "^3.0.0",
     "csv-writer": "^1.6.0",
     "exceljs": "^4.4.0",
     "pdfkit": "^0.14.0",
-    
-    // 🎨 Image & Media Processing
     "canvas": "^2.11.2",
     "sharp": "^0.32.6",
     "jimp": "^0.22.10",
     "qr-image": "^3.2.0",
-    
-    // 🌐 Web & API
     "express": "^4.18.2",
     "cors": "^2.8.5",
     "helmet": "^7.1.0",
     "compression": "^1.7.4",
-    
-    // 💾 Database & Storage
     "quick.db": "^9.1.6",
     "lowdb": "^7.0.0",
     "node-cache": "^5.1.2",
-    
-    // 🔧 Utilities
     "lodash": "^4.17.21",
     "moment-timezone": "^0.5.43",
     "uuid": "^9.0.1",
     "qrcode-terminal": "^0.12.0",
-    
-    // 📧 Notifications & Email
     "nodemailer": "^6.9.7",
     "node-cron": "^3.0.2",
-    
-    // 🔄 Real-time Features
     "socket.io": "^4.7.4",
     "ws": "^8.14.2",
-    
-    // 🌍 Internationalization
     "i18n": "^0.15.1",
     "google-translate-api": "^2.3.0"
   },
