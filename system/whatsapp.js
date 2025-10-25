@@ -689,40 +689,7 @@ class OrderProcessor {
         return status;
     }
 }
-    // Get stats for admin
-    getStats() {
-        return {
-            pendingOrders: this.pendingOrders.size,
-            trackedOrders: Array.from(this.pendingOrders.entries()).map(([id, info]) => ({
-                id,
-                userId: info.userId,
-                game: info.gameSlug,
-                checked: info.checked,
-                duration: Math.round((Date.now() - info.startTime) / 1000) + 's'
-            }))
-        };
-    }
-
-    // Force check a specific order (admin function)
-    async forceCheckOrder(orderId) {
-        const status = await this.checkOrderStatus(orderId);
-        if (status) {
-            // Find and update order in database
-            const orders = localDB.loadJSON('orders.json');
-            for (const userOrders of Object.values(orders)) {
-                const order = userOrders.find(o => o.id === orderId);
-                if (order) {
-                    order.status = status.status;
-                    order.updatedAt = new Date().toISOString();
-                    break;
-                }
-            }
-            localDB.saveJSON('orders.json', orders);
-        }
-        return status;
-    }
-}
-
+ 
 
 
 
