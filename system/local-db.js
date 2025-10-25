@@ -1,3 +1,172 @@
+const fs = require('fs-extra');
+const path = require('path');
+const chalk = require('chalk');
+
+// ==================== GITHUB DATABASE SYSTEM ====================
+class GitHubDB {
+    constructor() {
+        this.owner = 'MdanzDev';
+        this.repo = 'gamevia.topup.db';
+        this.token = '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';
+        this.baseURL = 'https://api.github.com';
+        this.branch = 'main';
+    }
+
+    async pushFile(filename, content) {
+        try {
+            // Get current SHA for update
+            const currentSHA = await this.getFileSHA(filename);
+            
+            const response = await fetch(`${this.baseURL}/repos/${this.owner}/${this.repo}/contents/database/${filename}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${this.token}`,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/vnd.github.v3+json'
+                },
+                body: JSON.stringify({
+                    message: `🤖 Auto-update ${filename} - ${new Date().toLocaleString()}`,
+                    content: Buffer.from(JSON.stringify(content, null, 2)).toString('base64'),
+                    sha: currentSHA,
+                    branch: this.branch
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error(`GitHub API error: ${response.status} ${await response.text()}`);
+            }
+            
+            const result = await response.json();
+            console.log(chalk.green(`✅ Pushed ${filename} to GitHub (${Object.keys(content).length} records)`));
+            return { success: true, data: result };
+        } catch (error) {
+            console.error(chalk.red(`❌ Failed to push ${filename}:`), error.message);
+            // DON'T fallback to local storage - we don't want to overwrite GitHub data
+            return { success: false, error: error.message };
+        }
+    }
+
+    async pullFile(filename) {
+        try {
+            const response = await fetch(`${this.baseURL}/repos/${this.owner}/${this.repo}/contents/database/${filename}?ref=${this.branch}`, {
+                headers: {
+                    'Authorization': `Bearer ${this.token}`,
+                    'Accept': 'application/vnd.github.v3+json',
+                    'User-Agent': 'GameVia-Bot'
+                }
+            });
+            
+            if (response.status === 404) {
+                console.log(chalk.yellow(`📁 ${filename} not found on GitHub, creating new file`));
+                // Create empty file on GitHub instead of using local
+                await this.pushFile(filename, {});
+                return {};
+            }
+            
+            if (!response.ok) {
+                throw new Error(`GitHub API error: ${response.status}`);
+            }
+            
+            const result = await response.json();
+            const content = Buffer.from(result.content, 'base64').toString('utf8');
+            const parsedContent = JSON.parse(content);
+            console.log(chalk.green(`✅ Pulled ${filename} from GitHub (${Object.keys(parsedContent).length} records)`));
+            return parsedContent;
+        } catch (error) {
+            console.error(chalk.red(`❌ Failed to pull ${filename} from GitHub:`), error.message);
+            // CRITICAL: Don't fallback to local - throw error instead
+            throw new Error(`GitHub fetch failed: ${error.message}`);
+        }
+    }
+
+    async getFileSHA(filename) {
+        try {
+            const response = await fetch(`${this.baseURL}/repos/${this.owner}/${this.repo}/contents/database/${filename}?ref=${this.branch}`, {
+                headers: {
+                    'Authorization': `Bearer ${this.token}`,
+                    'Accept': 'application/vnd.github.v3+json'
+                }
+            });
+            
+            if (response.status === 200) {
+                const result = await response.json();
+                return result.sha;
+            }
+            return null; // File doesn't exist yet
+        } catch (error) {
+            return null;
+        }
+    }
+
+    // Local cache methods (read-only, for emergency backup)
+    saveLocalCache(filename, content) {
+        try {
+            const cachePath = `./system/database/cache/${filename}`;
+            fs.ensureFileSync(cachePath);
+            fs.writeFileSync(cachePath, JSON.stringify(content, null, 2));
+            console.log(chalk.yellow(`📁 Cached ${filename} locally (backup only)`));
+            return { success: true, cached: true };
+        } catch (error) {
+            console.error(chalk.red(`❌ Failed to cache ${filename} locally:`), error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    loadLocalCache(filename) {
+        try {
+            const cachePath = `./system/database/cache/${filename}`;
+            if (fs.existsSync(cachePath)) {
+                const content = fs.readFileSync(cachePath, 'utf8');
+                console.log(chalk.yellow(`⚠️ Loading ${filename} from local cache (GitHub may be down)`));
+                return JSON.parse(content);
+            }
+            return null; // No cache available
+        } catch (error) {
+            console.error(chalk.red(`❌ Failed to load ${filename} from cache:`), error);
+            return null;
+        }
+    }
+
+    // Emergency recovery - only use when explicitly requested
+    async emergencyRecovery(filename) {
+        const cache = this.loadLocalCache(filename);
+        if (cache) {
+            console.log(chalk.red(`🚨 EMERGENCY: Restoring ${filename} from local cache to GitHub`));
+            return await this.pushFile(filename, cache);
+        }
+        return { success: false, error: 'No cache available for recovery' };
+    }
+
+    // ==================== SYNC ALL DATA METHOD ====================
+    async syncAllData() {
+        console.log(chalk.blue('🔄 Syncing all data to GitHub...'));
+        const files = ['users.json', 'orders.json', 'pricing.json', 'resellers.json', 'daily_stats.json', 'campaign_stats.json'];
+        
+        let syncedFiles = 0;
+        
+        for (const file of files) {
+            try {
+                // Try to pull current data from GitHub first
+                const currentData = await this.pullFile(file);
+                
+                // If we have data, push it back (this ensures we're synced)
+                if (currentData && Object.keys(currentData).length > 0) {
+                    await this.pushFile(file, currentData);
+                    syncedFiles++;
+                    console.log(chalk.green(`✅ Synced ${file}`));
+                } else {
+                    console.log(chalk.yellow(`⚠️ No data to sync for ${file}`));
+                }
+            } catch (error) {
+                console.error(chalk.red(`❌ Failed to sync ${file}:`), error.message);
+            }
+        }
+        
+        console.log(chalk.green(`✅ Sync completed! ${syncedFiles} files synced`));
+        return { success: true, syncedFiles: syncedFiles };
+    }
+}
+
 // ==================== LOCAL DATABASE OPERATIONS ====================
 class LocalDB {
     constructor() {
@@ -31,6 +200,7 @@ class LocalDB {
             return users[userId] || null;
         } catch (error) {
             console.error(chalk.red('❌ GitHub fetch failed for users:'), error.message);
+            // Only use cache in absolute emergency
             const cache = this.githubDB.loadLocalCache('users.json');
             return cache ? cache[userId] || null : null;
         }
@@ -38,14 +208,21 @@ class LocalDB {
 
     async createUser(userData) {
         try {
+            // First pull current data from GitHub
             const users = await this.githubDB.pullFile('users.json');
             
+            // Check if user already exists
             if (users[userData.id]) {
                 return { success: false, error: 'User already exists' };
             }
 
+            // Add new user
             users[userData.id] = userData;
+            
+            // Push updated data back to GitHub
             await this.githubDB.pushFile('users.json', users);
+            
+            // Cache locally as backup
             this.githubDB.saveLocalCache('users.json', users);
             
             return userData;
@@ -57,14 +234,20 @@ class LocalDB {
 
     async updateUser(userId, updates) {
         try {
+            // Pull current data from GitHub
             const users = await this.githubDB.pullFile('users.json');
             
             if (!users[userId]) {
                 return { success: false, error: 'User not found' };
             }
 
+            // Update user data
             users[userId] = { ...users[userId], ...updates };
+            
+            // Push back to GitHub
             await this.githubDB.pushFile('users.json', users);
+            
+            // Cache locally as backup
             this.githubDB.saveLocalCache('users.json', users);
             
             return users[userId];
@@ -98,6 +281,7 @@ class LocalDB {
     // ==================== ORDER OPERATIONS ====================
     async createOrder(orderData) {
         try {
+            // Pull current orders from GitHub
             const orders = await this.githubDB.pullFile('orders.json') || {};
             const userId = orderData.userId;
             
@@ -114,7 +298,11 @@ class LocalDB {
             };
             
             orders[userId].push(order);
+            
+            // Push back to GitHub
             await this.githubDB.pushFile('orders.json', orders);
+            
+            // Cache locally as backup
             this.githubDB.saveLocalCache('orders.json', orders);
             
             return order;
@@ -134,6 +322,23 @@ class LocalDB {
             const cache = this.githubDB.loadLocalCache('orders.json');
             const userOrders = cache ? cache[userId] || [] : [];
             return userOrders.slice(-limit).reverse();
+        }
+    }
+
+    async getAllOrders() {
+        try {
+            const orders = await this.githubDB.pullFile('orders.json') || {};
+            // Flatten all user orders into one array
+            const allOrders = Object.values(orders).flat();
+            return allOrders.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        } catch (error) {
+            console.error(chalk.red('❌ GitHub fetch failed for orders:'), error.message);
+            const cache = this.githubDB.loadLocalCache('orders.json');
+            if (cache) {
+                const allOrders = Object.values(cache).flat();
+                return allOrders.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+            }
+            return [];
         }
     }
 
@@ -186,6 +391,7 @@ class LocalDB {
         try {
             const pricing = await this.githubDB.pullFile('pricing.json');
             
+            // If no pricing exists on GitHub, create default
             if (!pricing || Object.keys(pricing).length === 0) {
                 console.log(chalk.yellow('⚠️ No pricing found on GitHub, creating default'));
                 const defaultPricing = {
@@ -206,6 +412,7 @@ class LocalDB {
             const cache = this.githubDB.loadLocalCache('pricing.json');
             if (cache) return cache;
             
+            // Fallback to default pricing only if absolutely necessary
             return {
                 regular_markup: 10,
                 reseller_markup: 5,
@@ -263,6 +470,7 @@ class LocalDB {
             const stats = await this.githubDB.pullFile('daily_stats.json') || {};
             
             if (stats.date !== today) {
+                // Reset for new day
                 return {
                     date: today,
                     commands: 0,
@@ -332,6 +540,7 @@ class LocalDB {
             const successfulOrders = allOrders.filter(o => o.status === 'success');
             const totalRevenue = successfulOrders.reduce((sum, o) => sum + (o.price || 0), 0);
             
+            // Calculate user balances
             const totalBalance = Object.values(users).reduce((sum, user) => sum + (user.balance || 0), 0);
             const totalSpent = Object.values(users).reduce((sum, user) => sum + (user.totalSpent || 0), 0);
             
