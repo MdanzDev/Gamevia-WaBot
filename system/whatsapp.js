@@ -2799,9 +2799,12 @@ else if (command.startsWith('select-')) {
         // FIXED: Get pricing with proper await
         const pricing = await localDB.getPricing();
         
+        // FIXED: Check if user is reseller ONCE outside the map function
+        const isUserReseller = await auth.isReseller(m.sender);
+        
         const productButtons = productData.products.map(product => {
             let markup = pricing.regular_markup;
-            if (await auth.isReseller(m.sender)) {
+            if (isUserReseller) {
                 markup = pricing.reseller_markup;
             }
             
@@ -2824,7 +2827,7 @@ else if (command.startsWith('select-')) {
             type: 1
         });
 
-        const roleText = await auth.isReseller(m.sender) ? '👑 Reseller Pricing' : 'Regular Pricing';
+        const roleText = isUserReseller ? '👑 Reseller Pricing' : 'Regular Pricing';
         
         rikz.sendMessage(m.chat, {
             text: `🎮 *${productData.game_name || slug}* ${categoryInfo?.name.includes('Malaysia') ? '🇲🇾' : categoryInfo?.name.includes('Indonesia') ? '🇮🇩' : '🌍'}\n*${roleText} - Best rates included*\n\n*Category:* ${categoryInfo?.name || 'General'}`,
@@ -2838,7 +2841,7 @@ else if (command.startsWith('select-')) {
         rikz.sendMessage(m.chat, { text: "Failed to fetch products." }, { quoted: m });
     }
 }
-
+    
     else if (command.startsWith('order-')) {
     if (!await auth.userExists(m.sender)) {
         return rikz.sendMessage(m.chat, { text: "❌ Please register first using .register" }, { quoted: m });
