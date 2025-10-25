@@ -941,7 +941,7 @@ class OrderProcessor {
     }
 
     async processOrder(userId, orderData) {
-        const user = auth.getUser(userId);
+        const user = await auth.getUser(userId);
         if (!user) {
             return { success: false, error: 'User not found' };
         }
@@ -1185,7 +1185,7 @@ module.exports = rikz = async (rikz, m, chatUpdate, store) => {
         const botNumber = await rikz.decodeJid(rikz.user.id);
         const isCreator = [botNumber, ...global.owner].map(v => v.replace(/[^0-9]/g, "") + "@s.whatsapp.net").includes(m.sender);
 
-        const user = auth.getUser(m.sender);
+        const user = await auth.getUser(m.sender);
         const [amountStr] = args;
 
 
@@ -1194,7 +1194,7 @@ module.exports = rikz = async (rikz, m, chatUpdate, store) => {
       // =============== COMMAND HANDLER ===============
     switch(command) {
     case 'register':
-        if (auth.userExists(m.sender)) {
+        if (await auth.userExists(m.sender)) {
             return rikz.sendMessage(m.chat, { text: "You're already registered." }, { quoted: m });
         }
         
@@ -1249,7 +1249,7 @@ module.exports = rikz = async (rikz, m, chatUpdate, store) => {
 
     case 'price':
     case 'games':
-        if (!auth.userExists(m.sender)) {
+        if (!await auth.userExists(m.sender)) {
             return rikz.sendMessage(m.chat, { text: "Please register first using .register" }, { quoted: m });
         }
         
@@ -1260,32 +1260,32 @@ module.exports = rikz = async (rikz, m, chatUpdate, store) => {
             type: 1
         }));
 
-        const userRoleText = auth.isReseller(m.sender) ? 
+        const userRoleText = await auth.isReseller(m.sender) ? 
             "👑 Reseller Pricing - Special Rates!" : 
             "Regular Pricing - Best Market Rates";
 
         rikz.sendMessage(m.chat, {
             text: `🎮 *Game Categories* 🌍\n\n${userRoleText}\n\nChoose your region:`,
-            footer: auth.isReseller(m.sender) ? "Special reseller rates applied" : "Best prices for all regions",
+            footer: await auth.isReseller(m.sender) ? "Special reseller rates applied" : "Best prices for all regions",
             buttons: categoryButtons,
             headerType: 1
         }, { quoted: m });
         break;
 
     case 'balance':
-    if (!auth.userExists(m.sender)) {
+    if (!await auth.userExists(m.sender)) {
         return rikz.sendMessage(m.chat, { text: "Please register first using .register" }, { quoted: m });
     }
     
-    const currentUser = auth.getUser(m.sender);
-    const transactions = auth.getUserTransactions(m.sender, 5);
+    const currentUser = await auth.getUser(m.sender);
+    const transactions = await auth.getUserTransactions(m.sender, 5);
     
     let balanceText = `💰 *Your Balance*\n\n`;
     balanceText += `💵 Current Balance: *RM${(currentUser.balance || 0).toFixed(2)}*\n`;
     balanceText += `ðŸ›’ Total Orders: ${currentUser.totalOrders || 0}\n`;
     balanceText += `💳 Total Spent: RM${(currentUser.totalSpent || 0).toFixed(2)}\n`;
     
-    if (auth.isReseller(m.sender)) {
+    if (await auth.isReseller(m.sender)) {
         balanceText += `👑 Status: Reseller (Wholesale Pricing)\n`;
     }
     
@@ -1306,11 +1306,11 @@ module.exports = rikz = async (rikz, m, chatUpdate, store) => {
     break;
 
     case 'topup':
-        if (!auth.userExists(m.sender)) {
+        if (!await auth.userExists(m.sender)) {
             return rikz.sendMessage(m.chat, { text: "Please register first using .register" }, { quoted: m });
         }
 
-        const topupText = `💳 *Top Up Balance*\n\nTo add funds to your account, please contact admin for payment instructions.\n\n*Payment Methods:*\nâ€¢ Bank Transfer\nâ€¢ E-Wallet\nâ€¢ Cryptocurrency\n\nAfter payment, send receipt to admin for instant balance update!\n\n*Current Balance:* RM${auth.getUser(m.sender).balance.toFixed(2)}`;
+        const topupText = `💳 *Top Up Balance*\n\nTo add funds to your account, please contact admin for payment instructions.\n\n*Payment Methods:*\nâ€¢ Bank Transfer\nâ€¢ E-Wallet\nâ€¢ Cryptocurrency\n\nAfter payment, send receipt to admin for instant balance update!\n\n*Current Balance:* RM${await auth.getUser(m.sender).balance.toFixed(2)}`;
 
         rikz.sendMessage(m.chat, { text: topupText }, { quoted: m });
         break;
@@ -1343,13 +1343,13 @@ module.exports = rikz = async (rikz, m, chatUpdate, store) => {
         break;
 
     case 'withdraw':
-    if (!auth.userExists(m.sender)) {
+    if (!await auth.userExists(m.sender)) {
         return rikz.sendMessage(m.chat, { text: "Please register first using .register" }, { quoted: m });
     }
 
     const [withdrawAmountStr] = args;
     const withdrawAmount = parseFloat(withdrawAmountStr);
-    const withdrawUser = auth.getUser(m.sender);
+    const withdrawUser = await auth.getUser(m.sender);
 
     if (!withdrawAmount || isNaN(withdrawAmount) || withdrawAmount <= 0) {
         return rikz.sendMessage(m.chat, { 
@@ -1399,13 +1399,13 @@ module.exports = rikz = async (rikz, m, chatUpdate, store) => {
     break;
 
     case 'transfer':
-        if (!auth.userExists(m.sender)) {
+        if (!await auth.userExists(m.sender)) {
             return rikz.sendMessage(m.chat, { text: "Please register first using .register" }, { quoted: m });
         }
 
         const [transferTargetPhone, transferAmountStr] = args;  // Changed variable name
         const transferAmount = parseFloat(transferAmountStr);  // Changed variable name
-        const transferSenderUser = auth.getUser(m.sender);  // Changed variable name
+        const transferSenderUser = await auth.getUser(m.sender);  // Changed variable name
 
         if (!transferTargetPhone || !transferAmount || isNaN(transferAmount) || transferAmount <= 0) {  // Changed variable name
             return rikz.sendMessage(m.chat, { 
@@ -1425,7 +1425,7 @@ module.exports = rikz = async (rikz, m, chatUpdate, store) => {
 
         const transferTargetUserId = transferTargetPhone.includes('@s.whatsapp.net') ? transferTargetPhone : `${transferTargetPhone}@s.whatsapp.net`;  // Changed variable name
         
-        if (!auth.userExists(transferTargetUserId)) {  // Changed variable name
+        if (!await auth.userExists(transferTargetUserId)) {  // Changed variable name
             return rikz.sendMessage(m.chat, { text: "âŒ Recipient not found. They need to register first." }, { quoted: m });
         }
 
@@ -1466,7 +1466,7 @@ module.exports = rikz = async (rikz, m, chatUpdate, store) => {
         break;
 
    case 'history':
-    if (!auth.userExists(m.sender)) {
+    if (!await auth.userExists(m.sender)) {
         return rikz.sendMessage(m.chat, { text: "Please register first using .register" }, { quoted: m });
     }
 
@@ -1491,11 +1491,11 @@ module.exports = rikz = async (rikz, m, chatUpdate, store) => {
     break;
 
     case 'stats':
-        if (!auth.userExists(m.sender)) {
+        if (!await auth.userExists(m.sender)) {
             return rikz.sendMessage(m.chat, { text: "Please register first using .register" }, { quoted: m });
         }
         
-        const userStats = auth.getUser(m.sender);
+        const userStats = await auth.getUser(m.sender);
         const systemStats = localDB.getStats();
         
         const statsText = `📖Š *Your Statistics*\n\n` +
@@ -1512,11 +1512,11 @@ module.exports = rikz = async (rikz, m, chatUpdate, store) => {
         break;
 
     case 'mystats':
-    if (!auth.userExists(m.sender)) {
+    if (!await auth.userExists(m.sender)) {
         return rikz.sendMessage(m.chat, { text: "Please register first using .register" }, { quoted: m });
     }
 
-    const myUser = auth.getUser(m.sender);
+    const myUser = await auth.getUser(m.sender);
     const myOrders = localDB.getUserOrders(m.sender, 100);
 
     const successfulOrders = myOrders.filter(o => o.status === 'success').length;
@@ -1549,7 +1549,7 @@ module.exports = rikz = async (rikz, m, chatUpdate, store) => {
             `â­ ${favoriteGame[0]}: ${favoriteGame[1]} orders\n\n`;
     }
 
-    if (auth.isReseller(m.sender)) {
+    if (await auth.isReseller(m.sender)) {
         mystatsText += `👑 *Reseller Benefits*\n` +
             `âœ… Wholesale pricing\n` +
             `âœ… Lower markup rates\n` +
@@ -1707,7 +1707,7 @@ Use *.price* to explore all games!`;
             
             
 case 'mlposter':
-    if (!auth.isReseller(m.sender)) {
+    if (!await auth.isReseller(m.sender)) {
         return rikz.sendMessage(m.chat, { text: "âŒ Reseller feature only." }, { quoted: m });
     }
 
@@ -1720,7 +1720,7 @@ case 'mlposter':
         }
 
         const pricing = localDB.getPricing();
-        const userData = auth.getUser(m.sender);
+        const userData = await auth.getUser(m.sender);
 
         // Generate professional poster
         const posterBuffer = await realPosterGenerator.generateMLBBPoster(userData, productsData, pricing);
@@ -1743,11 +1743,11 @@ case 'mlposter':
     break;
             
     case 'reseller':
-    if (!auth.userExists(m.sender)) {
+    if (!await auth.userExists(m.sender)) {
         return rikz.sendMessage(m.chat, { text: "Please register first using .register" }, { quoted: m });
     }
 
-    if (auth.isReseller(m.sender)) {
+    if (await auth.isReseller(m.sender)) {
         
         const resellerText = `👑 *Reseller Dashboard*\n\n` +
             `ðŸ’¼ Your Account:\n` +
@@ -1790,7 +1790,7 @@ case 'mlposter':
     break;
 
     case 'resellerstats':
-    if (!auth.isReseller(m.sender)) {
+    if (!await auth.isReseller(m.sender)) {
         return rikz.sendMessage(m.chat, { text: "You are not a reseller." }, { quoted: m });
     }
 
@@ -1810,11 +1810,11 @@ case 'mlposter':
     break;
 
     case 'rewards':
-        if (!auth.userExists(m.sender)) {
+        if (!await auth.userExists(m.sender)) {
             return rikz.sendMessage(m.chat, { text: "Please register first using .register" }, { quoted: m });
         }
 
-        const userForRewards = auth.getUser(m.sender);
+        const userForRewards = await auth.getUser(m.sender);
         const userOrders = localDB.getUserOrders(m.sender, 100);
         const successfulOrdersCount = userOrders.filter(o => o.status === 'success').length;
 
@@ -1837,11 +1837,11 @@ case 'mlposter':
         break;
 
     case 'claimreward':
-        if (!auth.userExists(m.sender)) {
+        if (!await auth.userExists(m.sender)) {
             return rikz.sendMessage(m.chat, { text: "Please register first using .register" }, { quoted: m });
         }
 
-        const userForClaim = auth.getUser(m.sender);
+        const userForClaim = await auth.getUser(m.sender);
         const userOrdersForClaim = localDB.getUserOrders(m.sender, 1000);
         const successfulOrdersForClaim = userOrdersForClaim.filter(o => o.status === 'success').length;
 
@@ -1878,11 +1878,11 @@ case 'mlposter':
         break;
 
     case 'vip':
-        if (!auth.userExists(m.sender)) {
+        if (!await auth.userExists(m.sender)) {
             return rikz.sendMessage(m.chat, { text: "Please register first using .register" }, { quoted: m });
         }
 
-        const vipUser = auth.getUser(m.sender);
+        const vipUser = await auth.getUser(m.sender);
         const vipSpent = vipUser.totalSpent || 0;
 
         const vipText = `👑 *VIP PROGRAM* 👑\n\n` +
@@ -1914,7 +1914,7 @@ case 'mlposter':
 
     case 'leaderboard':
         try {
-            const users = auth.getAllUsers();
+            const users = await auth.getAllUsers();
             const userArray = Object.entries(users)
                 .filter(([_, user]) => user.totalOrders > 0)
                 .sort((a, b) => (b[1].totalSpent || 0) - (a[1].totalSpent || 0))
@@ -2085,7 +2085,7 @@ case 'mlposter':
                     }, { quoted: m });
                 }
 
-                const userForFeedback = auth.getUser(m.sender);
+                const userForFeedback = await auth.getUser(m.sender);
                 
                 try {
                     await localDB.saveFeedback({
@@ -2172,7 +2172,7 @@ case 'mlposter':
         
         rikz.sendMessage(m.chat, { text: "📖¢ Starting broadcast to all users..." }, { quoted: m });
         
-        const users = auth.getAllUsers();
+        const users = await auth.getAllUsers();
         let successCount = 0;
         let failCount = 0;
         
@@ -2206,7 +2206,7 @@ case 'mlposter':
         }
 
         const broadcastCaption = text;
-        const broadcastUsers = auth.getAllUsers();
+        const broadcastUsers = await auth.getAllUsers();
         
         rikz.sendMessage(m.chat, { text: `📖¢ Broadcasting image to ${Object.keys(broadcastUsers).length} users...` }, { quoted: m });
 
@@ -2282,13 +2282,13 @@ case 'addreseller':
 
     const addResellerUserId = addResellerUser.includes('@s.whatsapp.net') ? addResellerUser : `${addResellerUser}@s.whatsapp.net`;
     
-    if (!auth.userExists(addResellerUserId)) {
+    if (!await auth.userExists(addResellerUserId)) {
         return rikz.sendMessage(m.chat, { 
             text: "❌ User not found. Please ask them to register first using .register" 
         }, { quoted: m });
     }
 
-    const targetUser = auth.getUser(addResellerUserId);
+    const targetUser = await auth.getUser(addResellerUserId);
     if (!targetUser) {
         return rikz.sendMessage(m.chat, { 
             text: "❌ User data not found. Please try again." 
@@ -2332,20 +2332,20 @@ case 'removereseller':
     const removeResellerUserId = removeResellerUser.includes('@s.whatsapp.net') ? removeResellerUser : `${removeResellerUser}@s.whatsapp.net`;
     
     // Check if user exists
-    if (!auth.userExists(removeResellerUserId)) {
+    if (!await auth.userExists(removeResellerUserId)) {
         return rikz.sendMessage(m.chat, { 
             text: "❌ User not found." 
         }, { quoted: m });
     }
 
     // Check if user is actually a reseller
-    if (!auth.isReseller(removeResellerUserId)) {
+    if (!await auth.isReseller(removeResellerUserId)) {
         return rikz.sendMessage(m.chat, { 
             text: "❌ User is not a reseller." 
         }, { quoted: m });
     }
 
-    const userToRemove = auth.getUser(removeResellerUserId);
+    const userToRemove = await auth.getUser(removeResellerUserId);
     
     try {
         // Remove from resellers and update user role
@@ -2411,7 +2411,7 @@ case 'removereseller':
         if (!isCreator) break;
         const comprehensiveStats = analytics.getComprehensiveAnalytics();
         const dailyStats = analytics.getDailyAnalytics();
-        const userStatsAll = auth.getUserStats();
+        const userStatsAll = await auth.getUserStats();
         
         const analyticsText = `📖ˆ *Business Analytics*\n
 📖… *Today's Stats:*
@@ -2447,7 +2447,7 @@ ${Object.entries(dailyStats.popularGames)
         try {
             const dailyReportStats = analytics.getDailyAnalytics();
             const systemReportStats = localDB.getStats();
-            const userReportStats = auth.getUserStats();
+            const userReportStats = await auth.getUserStats();
 
             const reportText = `📖Š *DAILY REPORT* 📖Š\n\n` +
                 `📖… Date: ${new Date().toLocaleDateString()}\n` +
@@ -2501,7 +2501,7 @@ case 'users':
     if (!isCreator) break;
     
     try {
-        const allUsers = auth.getAllUsers();
+        const allUsers = await auth.getAllUsers();
         const userList = Object.entries(allUsers)
             .sort((a, b) => new Date(b[1].createdAt) - new Date(a[1].createdAt))
             .slice(0, 15); // Show last 15 users
@@ -2539,7 +2539,7 @@ case 'users':
     if (!isCreator) break;
     
     try {
-        const allResellers = auth.getAllResellers();
+        const allResellers = await auth.getAllResellers();
         const resellerList = Object.entries(allResellers)
             .sort((a, b) => new Date(b[1].createdAt) - new Date(a[1].createdAt));
 
@@ -2549,7 +2549,7 @@ case 'users':
             resellersText += `No resellers found.\nUse .addreseller to add resellers.`;
         } else {
             resellerList.forEach(([userId, reseller], index) => {
-                const user = auth.getUser(userId);
+                const user = await auth.getUser(userId);
                 const date = new Date(reseller.createdAt).toLocaleDateString();
                 
                 resellersText += `${index + 1}. ${reseller.name}\n`;
@@ -2566,7 +2566,7 @@ case 'users':
 
         // Add summary
         const totalResellerSpent = Object.keys(allResellers).reduce((sum, userId) => {
-            const user = auth.getUser(userId);
+            const user = await auth.getUser(userId);
             return sum + (user?.totalSpent || 0);
         }, 0);
         
@@ -2595,7 +2595,7 @@ case 'users':
                 `📖Š Memory: ${Math.round(usage.heapUsed / 1024 / 1024)}MB / ${Math.round(usage.heapTotal / 1024 / 1024)}MB\n` +
                 `ðŸ”„ Node.js: ${process.version}\n\n` +
                 `ðŸ’¾ *Database Stats*\n` +
-                `ðŸ‘¥ Users: ${Object.keys(auth.getAllUsers()).length}\n` +
+                `ðŸ‘¥ Users: ${Object.keys(await auth.getAllUsers()).length}\n` +
                 `ðŸ›’ Orders: ${localDB.getStats().totalOrders}\n` +
                 `ðŸ’¿ Storage: Checking...\n\n` +
                 `📖ˆ *Performance*\n` +
@@ -2800,7 +2800,7 @@ else if (command.startsWith('select-')) {
         
         const productButtons = productData.products.map(product => {
             let markup = pricing.regular_markup;
-            if (auth.isReseller(m.sender)) {
+            if (await auth.isReseller(m.sender)) {
                 markup = pricing.reseller_markup;
             }
             
@@ -2823,7 +2823,7 @@ else if (command.startsWith('select-')) {
             type: 1
         });
 
-        const roleText = auth.isReseller(m.sender) ? '👑 Reseller Pricing' : 'Regular Pricing';
+        const roleText = await auth.isReseller(m.sender) ? '👑 Reseller Pricing' : 'Regular Pricing';
         
         rikz.sendMessage(m.chat, {
             text: `🎮 *${productData.game_name || slug}* ${categoryInfo?.name.includes('Malaysia') ? '🇲🇾' : categoryInfo?.name.includes('Indonesia') ? '🇮🇩' : '🌍'}\n*${roleText} - Best rates included*\n\n*Category:* ${categoryInfo?.name || 'General'}`,
@@ -2839,7 +2839,7 @@ else if (command.startsWith('select-')) {
 }
 
     else if (command.startsWith('order-')) {
-    if (!auth.userExists(m.sender)) {
+    if (!await auth.userExists(m.sender)) {
         return rikz.sendMessage(m.chat, { text: "❌ Please register first using .register" }, { quoted: m });
     }
 
@@ -2880,7 +2880,7 @@ else if (command.startsWith('select-')) {
                 // FIXED: Calculate price with markup
                 const pricing = await localDB.getPricing();
                 let markup = pricing.regular_markup;
-                if (auth.isReseller(m.sender)) {
+                if (await auth.isReseller(m.sender)) {
                     markup = pricing.reseller_markup;
                 }
                 
@@ -3041,7 +3041,7 @@ else if (sessionManager.getSession(m.sender)?.step === 'awaiting_ids') {
             // FIXED: Get pricing with proper await
             const pricing = await localDB.getPricing();
             let markup = pricing.regular_markup;
-            if (auth.isReseller(m.sender)) {
+            if (await auth.isReseller(m.sender)) {
                 markup = pricing.reseller_markup;
             }
             
@@ -3064,7 +3064,7 @@ else if (sessionManager.getSession(m.sender)?.step === 'awaiting_ids') {
     }
 
     // Balance check
-    const sessionUser = auth.getUser(m.sender);
+    const sessionUser = await auth.getUser(m.sender);
     const userBalanceCents = Math.round((sessionUser.balance || 0) * 100);
     const sessionPriceCents = Math.round(sessionPrice * 100);
 
