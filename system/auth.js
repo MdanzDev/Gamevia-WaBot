@@ -10,22 +10,13 @@ class AuthSystem {
         this.secretKey = this.generateOrLoadSecret();
         this.tokens = new Map();
         this.sessions = new Map();
-        this.users = {};
-        this.resellers = {};
-        this.init();
-        console.log(chalk.green('🔐 Authentication system initialized'));
+        // REMOVED IN-MEMORY DATABASE - Using GitHub only
+        console.log(chalk.green('🔐 Authentication system initialized - Using GitHub as primary storage'));
     }
 
     async init() {
-        try {
-            this.users = await localDB.getAllUsers();
-            this.resellers = await localDB.getAllResellers();
-            console.log(chalk.green(`✅ AuthSystem loaded ${Object.keys(this.users).length} users and ${Object.keys(this.resellers).length} resellers`));
-        } catch (error) {
-            console.error(chalk.red('❌ Failed to initialize AuthSystem:'), error);
-            this.users = {};
-            this.resellers = {};
-        }
+        // No need to load users into memory - everything comes from GitHub
+        console.log(chalk.green('✅ AuthSystem ready - All data fetched from GitHub on demand'));
     }
 
     generateOrLoadSecret() {
@@ -144,7 +135,9 @@ class AuthSystem {
     // ==================== USER MANAGEMENT ====================
     async registerUser(userId, userData) {
         try {
-            if (this.users[userId]) {
+            // Check if user exists directly in GitHub
+            const existingUser = await localDB.getUser(userId);
+            if (existingUser) {
                 return { success: false, error: 'User already exists' };
             }
 
@@ -166,7 +159,6 @@ class AuthSystem {
             };
             
             await localDB.createUser(user);
-            this.users[userId] = user;
             
             // Generate token and session
             const token = this.generateToken(userId, user);
@@ -185,21 +177,22 @@ class AuthSystem {
         }
     }
 
-    getUser(userId) {
-        return this.users[userId] || null;
+    async getUser(userId) {
+        return await localDB.getUser(userId);
     }
 
-    userExists(userId) {
-        return !!this.users[userId];
+    async userExists(userId) {
+        const user = await localDB.getUser(userId);
+        return !!user;
     }
 
-    getAllUsers() {
-        return this.users;
+    async getAllUsers() {
+        return await localDB.getAllUsers();
     }
 
     async updateUser(userId, updates) {
         try {
-            const user = this.users[userId];
+            const user = await localDB.getUser(userId);
             if (!user) {
                 return { success: false, error: 'User not found' };
             }
@@ -217,8 +210,6 @@ class AuthSystem {
             };
 
             await localDB.updateUser(userId, updatedUser);
-            this.users[userId] = updatedUser;
-
             return { success: true, user: updatedUser };
         } catch (error) {
             console.error(chalk.red(`❌ Failed to update user ${userId}:`), error);
@@ -229,7 +220,7 @@ class AuthSystem {
     // ==================== BALANCE MANAGEMENT ====================
     async addBalance(userId, amount, reason = '') {
         try {
-            const user = this.users[userId];
+            const user = await localDB.getUser(userId);
             if (!user) {
                 return { success: false, error: 'User not found' };
             }
@@ -272,7 +263,7 @@ class AuthSystem {
     }
 
     async deductBalance(userId, amount, reason = '') {
-        const user = this.users[userId];
+        const user = await localDB.getUser(userId);
         if (!user) {
             return { success: false, error: 'User not found' };
         }
@@ -293,7 +284,7 @@ class AuthSystem {
     // ==================== ORDER MANAGEMENT ====================
     async recordOrder(userId, orderData) {
         try {
-            const user = this.users[userId];
+            const user = await localDB.getUser(userId);
             if (!user) {
                 return { success: false, error: 'User not found' };
             }
@@ -308,7 +299,7 @@ class AuthSystem {
             user.updatedAt = new Date().toISOString();
 
             // Record transaction
-            this.recordTransaction(userId, {
+            await this.recordTransaction(userId, {
                 type: 'order_payment',
                 amount: -(orderData.price || 0),
                 orderId: orderData.id,
@@ -332,18 +323,20 @@ class AuthSystem {
     // ==================== RESELLER MANAGEMENT ====================
     async createReseller(userId, resellerData) {
         try {
-            if (this.resellers[userId]) {
+            const existingReseller = await localDB.getResellers().then(resellers => resellers[userId]);
+            if (existingReseller) {
                 return { success: false, error: 'User is already a reseller' };
             }
 
-            if (!this.users[userId]) {
+            const user = await localDB.getUser(userId);
+            if (!user) {
                 return { success: false, error: 'User not found. Please register first.' };
             }
 
             const reseller = {
                 userId: userId,
-                name: resellerData.name || this.users[userId].name,
-                phone: this.users[userId].phone,
+                name: resellerData.name || user.name,
+                phone: user.phone,
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
                 isActive: true,
@@ -360,11 +353,9 @@ class AuthSystem {
             };
 
             await localDB.createReseller(reseller);
-            this.resellers[userId] = reseller;
 
             // Update user role
-            this.users[userId].role = 'reseller';
-            await localDB.updateUser(userId, { role: 'reseller' });
+            await this.updateUser(userId, { role: 'reseller' });
 
             console.log(chalk.blue(`👑 New reseller created: ${reseller.name} (${userId})`));
             return { success: true, reseller: reseller };
@@ -374,21 +365,23 @@ class AuthSystem {
         }
     }
 
-    isReseller(userId) {
-        return !!this.resellers[userId];
+    async isReseller(userId) {
+        const resellers = await localDB.getAllResellers();
+        return !!resellers[userId];
     }
 
-    getReseller(userId) {
-        return this.resellers[userId] || null;
+    async getReseller(userId) {
+        const resellers = await localDB.getAllResellers();
+        return resellers[userId] || null;
     }
 
-    getAllResellers() {
-        return this.resellers;
+    async getAllResellers() {
+        return await localDB.getAllResellers();
     }
 
     async recordResellerSale(resellerId, saleData) {
         try {
-            const reseller = this.resellers[resellerId];
+            const reseller = await this.getReseller(resellerId);
             if (!reseller) {
                 return { success: false, error: 'Reseller not found' };
             }
@@ -428,27 +421,30 @@ class AuthSystem {
     }
 
     // ==================== TRANSACTION HISTORY ====================
-    recordTransaction(userId, transaction) {
-        const user = this.users[userId];
-        if (!user) return;
+    async recordTransaction(userId, transaction) {
+        try {
+            const user = await localDB.getUser(userId);
+            if (!user) return;
 
-        user.transactions = user.transactions || [];
-        user.transactions.push({
-            id: `tx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-            ...transaction
-        });
+            user.transactions = user.transactions || [];
+            user.transactions.push({
+                id: `tx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                ...transaction
+            });
 
-        // Keep only last 100 transactions per user
-        if (user.transactions.length > 100) {
-            user.transactions = user.transactions.slice(-100);
+            // Keep only last 100 transactions per user
+            if (user.transactions.length > 100) {
+                user.transactions = user.transactions.slice(-100);
+            }
+
+            await localDB.updateUser(userId, { transactions: user.transactions });
+        } catch (error) {
+            console.error('Failed to record transaction:', error);
         }
-
-        // Update user in memory (DB will be updated on next user update)
-        this.users[userId] = user;
     }
 
-    getUserTransactions(userId, limit = 10) {
-        const user = this.users[userId];
+    async getUserTransactions(userId, limit = 10) {
+        const user = await localDB.getUser(userId);
         if (!user || !user.transactions) {
             return [];
         }
@@ -458,8 +454,9 @@ class AuthSystem {
     }
 
     // ==================== USER STATISTICS ====================
-    getUserStats() {
-        const userArray = Object.values(this.users);
+    async getUserStats() {
+        const users = await localDB.getAllUsers();
+        const userArray = Object.values(users);
         
         const totalBalance = userArray.reduce((sum, user) => sum + (user.balance || 0), 0);
         const totalSpent = userArray.reduce((sum, user) => sum + (user.totalSpent || 0), 0);
@@ -469,7 +466,7 @@ class AuthSystem {
         return {
             totalUsers: userArray.length,
             activeUsers: activeUsers,
-            totalResellers: Object.keys(this.resellers).length,
+            totalResellers: Object.keys(await localDB.getAllResellers()).length,
             totalBalance: totalBalance,
             totalSpent: totalSpent,
             totalOrders: totalOrders,
@@ -479,8 +476,9 @@ class AuthSystem {
         };
     }
 
-    getResellerStats() {
-        const resellerArray = Object.values(this.resellers);
+    async getResellerStats() {
+        const resellers = await localDB.getAllResellers();
+        const resellerArray = Object.values(resellers);
         
         return {
             totalResellers: resellerArray.length,
@@ -495,7 +493,7 @@ class AuthSystem {
     // ==================== ADMIN METHODS ====================
     async updateUserRole(userId, newRole) {
         try {
-            const user = this.users[userId];
+            const user = await localDB.getUser(userId);
             if (!user) {
                 return { success: false, error: 'User not found' };
             }
@@ -504,11 +502,10 @@ class AuthSystem {
             user.updatedAt = new Date().toISOString();
 
             // Update reseller status
-            if (newRole === 'reseller' && !this.resellers[userId]) {
+            if (newRole === 'reseller' && !(await this.isReseller(userId))) {
                 await this.createReseller(userId, { name: user.name });
-            } else if (newRole !== 'reseller' && this.resellers[userId]) {
+            } else if (newRole !== 'reseller' && (await this.isReseller(userId))) {
                 // Deactivate reseller but keep record
-                this.resellers[userId].isActive = false;
                 await localDB.updateReseller(userId, { isActive: false });
             }
 
@@ -522,7 +519,7 @@ class AuthSystem {
 
     async suspendUser(userId, reason = '') {
         try {
-            const user = this.users[userId];
+            const user = await localDB.getUser(userId);
             if (!user) {
                 return { success: false, error: 'User not found' };
             }
@@ -549,7 +546,7 @@ class AuthSystem {
 
     async activateUser(userId) {
         try {
-            const user = this.users[userId];
+            const user = await localDB.getUser(userId);
             if (!user) {
                 return { success: false, error: 'User not found' };
             }
@@ -597,27 +594,20 @@ class AuthSystem {
 
     // ==================== SYNC METHODS ====================
     async syncData() {
-        try {
-            this.users = await localDB.getAllUsers();
-            this.resellers = await localDB.getAllResellers();
-            console.log(chalk.green('✅ Auth data synced successfully'));
-            return { 
-                success: true, 
-                users: Object.keys(this.users).length, 
-                resellers: Object.keys(this.resellers).length 
-            };
-        } catch (error) {
-            console.error(chalk.red('❌ Failed to sync auth data:'), error);
-            return { success: false, error: error.message };
-        }
+        // No need to sync - we're always using GitHub directly
+        console.log(chalk.green('✅ Auth system is always in sync with GitHub'));
+        return { 
+            success: true, 
+            message: 'Using GitHub as primary storage - always in sync' 
+        };
     }
 
     // ==================== BACKUP METHODS ====================
     async createBackup() {
         try {
             const backupData = {
-                users: this.users,
-                resellers: this.resellers,
+                users: await localDB.getAllUsers(),
+                resellers: await localDB.getAllResellers(),
                 sessions: Array.from(this.sessions.entries()),
                 tokens: Array.from(this.tokens.entries()),
                 backupCreated: new Date().toISOString()
@@ -639,13 +629,12 @@ class AuthSystem {
     getSystemHealth() {
         return {
             status: 'healthy',
-            users: Object.keys(this.users).length,
-            resellers: Object.keys(this.resellers).length,
+            storage: 'github',
             activeSessions: this.sessions.size,
             activeTokens: this.tokens.size,
             memoryUsage: process.memoryUsage(),
             uptime: process.uptime(),
-            lastSync: new Date().toISOString()
+            lastSync: 'always_in_sync'
         };
     }
 }
