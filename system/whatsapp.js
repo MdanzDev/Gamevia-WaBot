@@ -2441,18 +2441,70 @@ case 'testapi':
     break;
 
     case 'backup':
-        if (!isCreator) break;
-        rikz.sendMessage(m.chat, { text: 'ðŸ’¾ Starting database backup...' }, { quoted: m });
+    if (!isCreator) break;
+    
+    if (args[0] === 'emergency' || args[0] === 'recover') {
+        // Emergency recovery mode
+        rikz.sendMessage(m.chat, { text: '🚨 STARTING EMERGENCY RECOVERY FROM LOCAL CACHE...\n\n⚠️ WARNING: This will overwrite GitHub data with local cache!' }, { quoted: m });
+        
+        const recoveryResult = await localDB.emergencyRecovery();
+        if (recoveryResult.success && recoveryResult.recoveredFiles > 0) {
+            rikz.sendMessage(m.chat, { 
+                text: `✅ EMERGENCY RECOVERY COMPLETED!\n\nRecovered files: ${recoveryResult.recoveredFiles}\n\nAll data has been restored from local cache to GitHub.` 
+            }, { quoted: m });
+        } else {
+            rikz.sendMessage(m.chat, { 
+                text: `❌ RECOVERY FAILED!\n\nNo local cache available or recovery failed.\nFiles recovered: ${recoveryResult.recoveredFiles || 0}` 
+            }, { quoted: m });
+        }
+    } else {
+        // Normal backup mode
+        rikz.sendMessage(m.chat, { text: '💾 Starting database backup...' }, { quoted: m });
         
         const backupResult = await localDB.backup();
         if (backupResult.success) {
             rikz.sendMessage(m.chat, { 
-                text: `âœ… Backup completed!\nBackup ID: ${backupResult.backupId}\nFiles: ${backupResult.files}` 
+                text: `✅ Backup completed!\n\nBackup ID: ${backupResult.backupId}\nFiles: ${backupResult.files}\n\nBackup saved to GitHub backups folder.` 
             }, { quoted: m });
         } else {
-            rikz.sendMessage(m.chat, { text: 'âŒ Backup failed' }, { quoted: m });
+            rikz.sendMessage(m.chat, { 
+                text: `❌ Backup failed!\nError: ${backupResult.error || 'Unknown error'}` 
+            }, { quoted: m });
         }
-        break;
+    }
+    break;
+
+            case 'backupstatus':
+    if (!isCreator) break;
+    
+    try {
+        const stats = await localDB.getStats();
+        const users = await localDB.getAllUsers();
+        const orders = await localDB.getAllOrders();
+        
+        rikz.sendMessage(m.chat, { 
+            text: `📊 BACKUP STATUS\n
+🗂️ Current Data:
+• Users: ${stats.totalUsers}
+• Orders: ${stats.totalOrders}
+• Successful Orders: ${stats.successfulOrders}
+• Total Revenue: RM${stats.totalRevenue.toFixed(2)}
+
+💾 Local Cache:
+• Users in memory: ${Object.keys(users).length}
+• Orders in memory: ${orders.length}
+
+⚠️ Commands:
+• .backup - Create backup
+• .backup emergency - Recover from local cache
+• .sync - Force sync with GitHub` 
+        }, { quoted: m });
+    } catch (error) {
+        rikz.sendMessage(m.chat, { 
+            text: `❌ Failed to get backup status: ${error.message}` 
+        }, { quoted: m });
+    }
+    break;
 
 // =============== DYNAMIC COMMANDS ===============
 default:
