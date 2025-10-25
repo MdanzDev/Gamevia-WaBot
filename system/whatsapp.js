@@ -2534,8 +2534,7 @@ case 'users':
     }
     break;
 
-
-  case 'listresellers':
+case 'listresellers':
     if (!isCreator) break;
     
     try {
@@ -2548,7 +2547,9 @@ case 'users':
         if (resellerList.length === 0) {
             resellersText += `No resellers found.\nUse .addreseller to add resellers.`;
         } else {
-            resellerList.forEach(([userId, reseller], index) => {
+            // FIXED: Use for...of loop instead of forEach for async operations
+            for (let index = 0; index < resellerList.length; index++) {
+                const [userId, reseller] = resellerList[index];
                 const user = await auth.getUser(userId);
                 const date = new Date(reseller.createdAt).toLocaleDateString();
                 
@@ -2561,14 +2562,15 @@ case 'users':
                 // Add quick actions
                 resellersText += `   ⚡ Actions: .removereseller ${userId.replace('@s.whatsapp.net', '')}\n`;
                 resellersText += `   ──────────────\n`;
-            });
+            }
         }
 
-        // Add summary
-        const totalResellerSpent = Object.keys(allResellers).reduce((sum, userId) => {
+        // FIXED: Calculate total spent with proper async handling
+        let totalResellerSpent = 0;
+        for (const userId of Object.keys(allResellers)) {
             const user = await auth.getUser(userId);
-            return sum + (user?.totalSpent || 0);
-        }, 0);
+            totalResellerSpent += (user?.totalSpent || 0);
+        }
         
         resellersText += `\n💰 Total Revenue from Resellers: RM${totalResellerSpent.toFixed(2)}`;
 
@@ -2580,7 +2582,6 @@ case 'users':
         }, { quoted: m });
     }
     break;
-
 
     case 'system':
         if (!isCreator) break;
